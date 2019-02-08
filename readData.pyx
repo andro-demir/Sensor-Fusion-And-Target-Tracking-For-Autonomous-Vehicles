@@ -15,8 +15,8 @@ def readFromPath(file_name):
     Short guide to how to read and call the data
 '''
 def main():
-    file_name = ("DATA/01_city_c2s_fcw_10s_sensor.mat")
-    data = readFromPath(file_name)
+    fileName = ("DATA/01_city_c2s_fcw_10s_sensor.mat")
+    data = readFromPath(fileName)
     assert type(data) == dict 
     # Keys: radar, vision, lane, inertialMeasurementUnit
     print("Keys of the data dict:\n", data.keys())
