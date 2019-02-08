@@ -1,6 +1,7 @@
 import argparse
 from readData import readFromPath
 from objectClasses import imu, lane, radar, vision 
+from time import perf_counter
 
 def parseArgs():
     parser = argparse.ArgumentParser(description='Multi-Target Tracking',
@@ -20,5 +21,7 @@ def main():
     args = parseArgs()
 
 if __name__ == "__main__":
+    start = perf_counter()
     main()
-    
+    duration = perf_counter() - start
+    print("Performance: ", duration)
