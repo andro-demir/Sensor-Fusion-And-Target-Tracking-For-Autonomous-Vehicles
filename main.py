@@ -27,4 +27,4 @@ if __name__ == "__main__":
     start = perf_counter()
     main()
     duration = perf_counter() - start
-    print("Performance: ", duration)
+    print("Performance: %f secs" %duration)
