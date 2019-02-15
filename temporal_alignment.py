@@ -11,9 +11,10 @@ def temporal_alignment(obj, current_time):
     """
     for time in range(obj.timeStamp, current_time):
         obj.last_state = obj.x
+        obj.last_P = obj.P
         obj.x = np.dot(obj.F, obj.x) + obj.u + obj.w
         obj.P = np.dot(np.dot(obj.F, obj.P), obj.F.T) + obj.Q
-        obj.timeStamp = time
+        obj.timeStamp = time + 1
     return
 
 debug = False
