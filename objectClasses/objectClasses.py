@@ -9,7 +9,7 @@ class vehicle:
         self.acc_y = acc_y
 
 
-class radar():  
+class radar:  
     __slots__ = ['timeStamp', 'obj', 'numObjects']
     def __init__(self, timeStamp, obj, numObjects):
         self.timeStamp = timeStamp
@@ -17,7 +17,7 @@ class radar():
         self.numObjects = numObjects
 
 
-class vision():  
+class vision:  
     __slots__ = ['timeStamp', 'obj', 'numObjects']
     def __init__(self, timeStamp, obj, numObjects):
         self.timeStamp = timeStamp
@@ -25,14 +25,14 @@ class vision():
         self.numObjects = numObjects
 
 
-class lane():  
+class lane:  
     __slots__ = ['left', 'right']
     def __init__(self, left, right):
         self.left = left
         self.right = right
 
 
-class IMU():  
+class IMU:  
     __slots__ = ['timeStamp', 'velocity', 'yawRate']
     def __init__(self, timeStamp, velocity, yawRate):
         self.timeStamp = timeStamp
