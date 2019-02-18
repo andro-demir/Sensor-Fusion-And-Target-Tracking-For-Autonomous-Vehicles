@@ -1,12 +1,35 @@
-class vehicle:
-    __slots__ = ['pos_x', 'pos_y', 'vel_x', 'vel_y', 'acc_x', 'acc_y']
-    def __init__(self, pos_x, pos_y, vel_x, vel_y, acc_x, acc_y):
-        self.pos_x = pos_x
-        self.pos_y = pos_y
-        self.vel_x = vel_x
-        self.vel_y = vel_y
-        self.acc_x = acc_x
-        self.acc_y = acc_y
+'''
+    posX, posY, velX, velY, accX, accY: 
+        Obstacle's location and dynamic information relative to the ego 
+        vehicle's coordinate system.
+    yaw: Orientation (yaw angle)
+    yawRt: Yaw angle rate (angular velocity)
+    P: State covariance matrix
+    dim: Estimated object dimension vector
+    dimUncertainty: Dimension uncertainty vector
+    pExistence: Probability of existence
+    c: Classification vector
+    f: Feature vector
+'''
+class obstacle:
+    __slots__ = ['posX', 'posY', 'velX', 'velY', 'accX', 'accY', 'yaw', 
+                 'yawRt', 'P', 'dim', 'dimUncertainty', 'pExistence', 'c', 'f']
+    def __init__(self, posX, posY, velX, velY, accX, accY, yaw, yawRt, P, dim,
+                 dimUncertainty, pExistence, c, f):
+        self.posX = posX
+        self.posY = posY
+        self.velX = velX
+        self.velY = velY
+        self.accX = accX
+        self.accY = accY
+        self.yaw = yaw
+        self.yawRt = yawRt
+        self.P = P
+        self.dim = dim
+        self.dimUncertainty = dimUncertainty
+        self.pExistence = pExistence
+        self.c = c 
+        self.f = f
 
 
 class radar:  
