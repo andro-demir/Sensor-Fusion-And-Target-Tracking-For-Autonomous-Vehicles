@@ -1,11 +1,13 @@
 import numpy as np
 
-
 def temporal_alignment(obj, current_time):
     """
     preliminary kalman filter update for the obj.
-    :param obj: (class) the object beeing tracked with the properties: last_state, x(current state),
-     F (state dynamics matrix), u (input), w (proces noise model), P (state covariance matrix), Q (cov of process noise)
+    :param obj: (class) the object beeing tracked with the properties:
+                last_state, x(current state),
+                F (state dynamics matrix), u (input), 
+                w (proces noise model), 
+                P (state covariance matrix), Q (cov of process noise)
     :param current_time:
     :return:
     """
@@ -34,20 +36,19 @@ if debug:
                               [0, 0, 0, 0, 0, 1, 0, 0],
                               [0, 0, 0, 0, 0, 0, 1, delta],
                               [0, 0, 0, 0, 0, 0, 0, 0]])
-            self.u = np.zeros((8,))  # zeros for constant vel model, input should also change.
+            # zeros for constant vel model, input should also change:
+            self.u = np.zeros((8,))  
             self.w = np.random.random((8,))  # process noise
             Q = np.zeros((8,8))
-            Q[3:5, 3:5] = np.random.random() * np.eye(2)  # noise added only at the last derivatives
+            # noise added only at the last derivatives:
+            Q[3:5, 3:5] = np.random.random() * np.eye(2)  
             Q[7, 7] = np.random.random()
             self.Q = Q
             pass
 
     obj = object()
-
     obj_start_state = obj.x
-
     temporal_alignment(obj, 1)  # one step
-
     obj_state_1_iter = obj.x
 
 
