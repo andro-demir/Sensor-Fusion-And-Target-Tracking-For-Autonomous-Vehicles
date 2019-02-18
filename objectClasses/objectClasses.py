@@ -1,3 +1,4 @@
+from numpy import asarray
 '''
     posX, posY, velX, velY, accX, accY: 
         Obstacle's location and dynamic information relative to the ego 
@@ -13,9 +14,10 @@
 '''
 class obstacle:
     __slots__ = ['posX', 'posY', 'velX', 'velY', 'accX', 'accY', 'yaw', 
-                 'yawRt', 'P', 'dim', 'dimUncertainty', 'pExistence', 'c', 'f']
+                 'yawRt', 'P', 'dim', 'dimUncertainty', 'pExistence', 'c', 'f',
+                 'stateVector']
     def __init__(self, posX, posY, velX, velY, accX, accY, yaw, yawRt, P, dim,
-                 dimUncertainty, pExistence, c, f):
+                 dimUncertainty, pExistence, c, f, stateVector):
         self.posX = posX
         self.posY = posY
         self.velX = velX
@@ -24,6 +26,8 @@ class obstacle:
         self.accY = accY
         self.yaw = yaw
         self.yawRt = yawRt
+        self.stateVector = asarray([posX, posY, velX, velY, accX, accY, 
+                                    yaw, yawRt])
         self.P = P
         self.dim = dim
         self.dimUncertainty = dimUncertainty
