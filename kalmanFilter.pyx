@@ -23,18 +23,19 @@ def kf_measurement_update(fusion_obj, sensor_obj):
 
     # kalman filter equations:
     # R is the cov of the obs noise
-    S = np.dot(np.dot(sensor_obj.H, fusion_obj.P), sensor_obj.H.T) + sensor_obj.R  
+    S = np.dot(np.dot(sensor_obj.H, fusion_obj.P), sensor_obj.H.T) + \      
+                                                      sensor_obj.R  
     # K is the kalman gain
     K = np.dot(np.dot(fusion_obj.P, sensor_obj.H.T), np.linalg.inv(S))  
     # Updated aposteriori state estimate
-    x = fusion_obj.x + np.dot(K,sensor_obj.x - np.dot(sensor_obj.H,fusion_obj.x))  
+    x = fusion_obj.x + np.dot(K,sensor_obj.x - np.dot(sensor_obj.H,
+                                                      fusion_obj.x))  
     # Updated aposteriori estimate covariance
-    P = np.dot(np.eye(fusion_obj.x.shape[0]) - np.dot(K, sensor_obj.H), fusion_obj.P)  
-
+    P = np.dot(np.eye(fusion_obj.x.shape[0]) - np.dot(K, sensor_obj.H), 
+                                                         fusion_obj.P)  
     # update global object state and covariance
     fusion_obj.P = P
     fusion_obj.x = x
-
     pass
 
 debug = False
@@ -64,7 +65,7 @@ if debug:
             Q[7, 7] = np.random.random()
             self.Q = Q
 
-            # add the other params for sensor: this is a dummy example normally sensor 
+            # add the other params for sensor: this is a dummy example sensor 
             # sensor and fusion object might be different
             if is_sensor:  
                 self.R = np.random.random((8,8))
