@@ -105,10 +105,14 @@ class Association():
         # any objects in the globalList
         notAssignedSensors = np.setdiff1d(self.rowInd, np.arange(
                                  self.mahalanobisMatrix.shape[0])
+        numRadarObjs = len(self.radarObjList)
         for i in notAssignedSensors:
-            obj.pExistence =  
-            globalList.append(obj)
-        
+            if i < numRadarObjs:
+                radarObjList[i].pExistence = gamma  
+                globalList.append(radarObjList[i])
+            else:
+                visionObjList[i-numRadarObjs].pExistence = gamma
+                globalList.append(visionObjList[i-numRadarObjs])     
 
     def getThreshold(self):
         pass
