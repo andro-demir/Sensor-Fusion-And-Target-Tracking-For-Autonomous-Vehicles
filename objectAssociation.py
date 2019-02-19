@@ -49,26 +49,28 @@ class Association():
         This function applies the linear sum assignment problem, also known as 
         minimum weight matching in bipartite graphs using Hungarian Method. 
         Given a problem instance is described by a matrix cost matrix, 
-        where each C[i,j] is the cost of matching vertex i of the first partite set 
-        (a “worker”) and vertex j of the second set (a “job”). 
+        where each C[i,j] is the cost of matching vertex i of the first partite
+        set (a “worker”) and vertex j of the second set (a “job”). 
         The goal is to find a complete assignment of workers to jobs of 
         minimal cost.
         '''
-        self.rowInd, self.colInd = linear_sum_assignment(self.mahalanobisMatrix)
+        self.rowInd, self.colInd = linear_sum_assignment(self.mahalanobisMatrix
+                                                                              )
 
     def updateExistenceProbability(self, mahalanobisMatrix, globalList, thresh, 
                                    alpha, beta, gamma, rowInd, colInd):
         '''
-        :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
+        :param mahalonobisMatrix (np.array): The cost matrix of the bipartite 
+                                             graph
         :param globalList (list): objects in the global list 
-        :param thresh (double): threshold level. If the cost is bigger than this,
-                                it might be a clutter - reduce the probability of
-                                existence by alpha.
-        :param alpha, beta, gamma (double): coeffs to update the probabilities of 
-                                            existence
+        :param thresh (double): threshold level. If the cost is bigger than
+                                this, it might be a clutter - reduce the 
+                                probability of existence by alpha.
+        :param alpha, beta, gamma (double): coeffs to update the probabilities  
+                                            of existence
         If a row (a sensor object) is not assigned to a column (an object in 
-        the global list), it may be a new object in the environment. Initialize a 
-        new object with probability of existence: beta.
+        the global list), it may be a new object in the environment. Initialize 
+        a new object with probability of existence: beta.
         :return globalList (list): updated globalList of obstacles
         '''
         alpha = self.getAlpha()
