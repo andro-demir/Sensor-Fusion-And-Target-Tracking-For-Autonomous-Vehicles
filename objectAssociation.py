@@ -3,22 +3,8 @@
 Contributors to this code
 ** Andac Demir (andacdemir@gmail.com) (main developer)
 ****************************************************************
-Radar sees so many objects and we need to delete some.
-Most of these things seen by the radar are clutter.
-For computationally efficient sensor fusion we remove the clutters.
-Of the rest of the candidate detections, we detect the best detections 
-coming based on the predicted track and the Mahalanobis distance.
-
-Step 1: Predict next position along the track of the vehicle
-Step 2: Matches should be close to the next state and some matches
-        are unlikely (clutter). We prune those detection using
-        the Global Nearest Neighbor method based on Mahalanobis
-        distance. This evaluates each observation in track gating
-        region and chooses the ones to incorporate into the track.
-Step 3: Apply Hungarian algorithm to the resulting cost matrix and 
-        the data association with the lowest cost associated to it
-        is generated. 
 '''
+
 import numpy as np
 from scipy.spatial.distance import Mahalanobis
 from scipy.optimize import linear_sum_assignment
@@ -35,8 +21,9 @@ class Association():
         self.visionObjList = visionObjList
         self.sensorObjList = radarObjList + visionObjList
         self.numGlobalObjs = len(globalList)
-        self.numSensorObjs = len(sensorObjList)
-        self.mahalanobisMatrix = np.zeros((numSensorObjs, numGlobalObjs))
+        self.numSensorObjs = len(self.sensorObjList)
+        self.mahalanobisMatrix = np.zeros((self.numSensorObjs, 
+                                           self.numGlobalObjs))
 
     def getMahalanobisMatrix(self):
         '''
@@ -49,7 +36,7 @@ class Association():
                 V = np.cov(np.array(self.globalList[i].stateVector, 
                                     self.sensorObjList[j].stateVector).T)
                 IV = np.linalg.inv(V)
-                self.mahalanobisMatrix[j, i] = mahalanobis(self.globalList[i].
+                self.mahalanobisMatrix[j, i] = Mahalanobis(self.globalList[i].
                                                                   stateVector, 
                                                           self.sensorObjList[j]
                                                               .stateVector, IV)
@@ -67,7 +54,7 @@ class Association():
         The goal is to find a complete assignment of workers to jobs of 
         minimal cost.
         '''
-        self.rowInd, self.colInd = linear_sum_assignment(mahalanobisMatrix)
+        self.rowInd, self.colInd = linear_sum_assignment(self.mahalanobisMatrix)
 
     def updateExistenceProbability(self, mahalanobisMatrix, globalList, thresh, 
                                    alpha, beta, gamma, rowInd, colInd):
@@ -96,7 +83,7 @@ class Association():
         # reduce the probability of existence of an object in the globalList 
         # by beta if it doesn't match with any sensor objs
         notAssignedGlobals = np.setdiff1d(self.colInd, 
-                                          np.arange(len(self.globalList))
+                                          np.arange(len(self.globalList)))
         for i in notAssignedGlobals:
             self.globalList[i].pExistence -= beta
         
@@ -104,15 +91,15 @@ class Association():
         # probability of existence (gamma), if the sensor object doesn't match
         # any objects in the globalList
         notAssignedSensors = np.setdiff1d(self.rowInd, np.arange(
-                                 self.mahalanobisMatrix.shape[0])
+                                self.mahalanobisMatrix.shape[0]))
         numRadarObjs = len(self.radarObjList)
         for i in notAssignedSensors:
             if i < numRadarObjs:
-                radarObjList[i].pExistence = gamma  
-                globalList.append(radarObjList[i])
+                self.radarObjList[i].pExistence = gamma  
+                self.globalList.append(self.radarObjList[i])
             else:
-                visionObjList[i-numRadarObjs].pExistence = gamma
-                globalList.append(visionObjList[i-numRadarObjs])     
+                self.visionObjList[i-numRadarObjs].pExistence = gamma
+                self.globalList.append(self.visionObjList[i-numRadarObjs])     
 
     def getThreshold(self):
         pass
