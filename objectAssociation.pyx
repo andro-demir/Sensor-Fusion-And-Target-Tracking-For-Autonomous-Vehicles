@@ -46,4 +46,62 @@ def getMahalanobisMatrix(globalList, radarObjList, visionObjList):
                                                   IV)
     return mahalanobisMatrix
 
-def updateExistenceProbability(mahalanobisMatrix):
+def matchObjs(mahalanobisMatrix):
+    '''
+    :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
+    :return rowInd, colInd (np.array): An array of row indices and one of  
+                                       corresponding column indices giving the 
+                                       optimal assignment. 
+    This function applies the linear sum assignment problem, also known as 
+    minimum weight matching in bipartite graphs using Hungarian Method. 
+    Given a problem instance is described by a matrix cost matrix, 
+    where each C[i,j] is the cost of matching vertex i of the first partite set 
+    (a “worker”) and vertex j of the second set (a “job”). 
+    The goal is to find a complete assignment of workers to jobs of 
+    minimal cost.
+    '''
+    rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
+    return rowInd, colInd
+
+def updateExistenceProbability(mahalanobisMatrix, globalList, thresh, 
+                               alpha, beta, gamma, rowInd, colInd):
+    '''
+    :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
+    :param globalList (list): objects in the global list 
+    :param threshold (double): threshold level. If the cost is bigger than this,
+                               it might be a clutter - reduce the probability of
+                               existence by alpha.
+    :param alpha, beta (double): coeffs to update the probabilities of 
+                                 existence
+    If a row (a sensor object) is not assigned to a column (an object in 
+    the global list), it may be a new object in the environment. Initialize a 
+    new object with probability of existence: beta.
+    :return: None
+    '''
+    alpha = getAlpha()
+    beta = getBeta()
+    thresh = getThreshold()
+    # reduce the probability of existence if it might be a clutter
+    for i, j in zip(rowInd, colInd):
+        if mahalanobisMatrix[i, j] > thresh:
+            globalList[j].pExistence -= alpha
+    # reduce the probability of existence of an object in the globalList 
+    # by gamma if it doesn't match with any sensor objs
+    pass
+    # initilialize a new object in the global lists by assigning a 
+    # probability of existence (alpha), if the sensor object doesn't match
+    # any objects in the globalList
+    pass
+    
+
+def getThreshold():
+    pass
+
+def getAlpha():
+    pass
+
+def getBeta():
+    pass
+
+def getGamma():
+    pass
