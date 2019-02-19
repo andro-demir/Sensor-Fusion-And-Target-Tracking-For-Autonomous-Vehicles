@@ -23,85 +23,101 @@ import numpy as np
 from scipy.spatial.distance import Mahalanobis
 from scipy.optimize import linear_sum_assignment
 
-def getMahalanobisMatrix(globalList, radarObjList, visionObjList):
-    '''
-    :param globalList (list): objects in the global list 
-    :param radarObjList (List): objects in the radar sensor measurements
-    :param visionObjList (List): objects in the vision sensor measurements
-    :return (np.array): the statistical distance (Mahalanobis distance) between
-                        state vectors from a global object and a sensor object 
-    '''
-    sensorObjList = radarObjList + visionObjList
-    numGlobalObjs = len(globalList)
-    numSensorObjs = len(sensorObjList)
-    mahalanobisMatrix = np.zeros((numSensorObjs, numGlobalObjs))
-    for i in globalList:
-        for j in sensorObjList:
-            # innovation covariance between 2 state estimates (3.14):
-            V = np.cov(np.array(globalList[i].stateVector, 
-                                sensorObjList[j].stateVector).T)
-            IV = np.linalg.inv(V)
-            mahalanobisMatrix[j, i] = mahalanobis(globalList[i].stateVector, 
-                                                  sensorObjList[j].stateVector,
-                                                  IV)
-    return mahalanobisMatrix
+class Association():
+    def __init__(self, globalList, radarObjList, visionObjList):
+        '''
+        :param globalList (list): objects in the global list 
+        :param radarObjList (List): objects in the radar sensor measurements
+        :param visionObjList (List): objects in the vision sensor measurements
+        '''
+        self.globalList = globalList
+        self.radarObjList = radarObjList
+        self.visionObjList = visionObjList
+        self.sensorObjList = radarObjList + visionObjList
+        self.numGlobalObjs = len(globalList)
+        self.numSensorObjs = len(sensorObjList)
+        self.mahalanobisMatrix = np.zeros((numSensorObjs, numGlobalObjs))
 
-def matchObjs(mahalanobisMatrix):
-    '''
-    :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
-    :return rowInd, colInd (np.array): An array of row indices and one of  
-                                       corresponding column indices giving the 
-                                       optimal assignment. 
-    This function applies the linear sum assignment problem, also known as 
-    minimum weight matching in bipartite graphs using Hungarian Method. 
-    Given a problem instance is described by a matrix cost matrix, 
-    where each C[i,j] is the cost of matching vertex i of the first partite set 
-    (a “worker”) and vertex j of the second set (a “job”). 
-    The goal is to find a complete assignment of workers to jobs of 
-    minimal cost.
-    '''
-    rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
-    return rowInd, colInd
+    def getMahalanobisMatrix(self):
+        '''
+        the statistical distance (Mahalanobis distance) between state vectors 
+        from a global object and a sensor object is evaluated. 
+        '''
+        for i in self.numGlobalObjs:
+            for j in self.numSensorObjs:
+                # innovation covariance between 2 state estimates (3.14):
+                V = np.cov(np.array(self.globalList[i].stateVector, 
+                                    self.sensorObjList[j].stateVector).T)
+                IV = np.linalg.inv(V)
+                self.mahalanobisMatrix[j, i] = mahalanobis(self.globalList[i].
+                                                                  stateVector, 
+                                                          self.sensorObjList[j]
+                                                              .stateVector, IV)
 
-def updateExistenceProbability(mahalanobisMatrix, globalList, thresh, 
-                               alpha, beta, gamma, rowInd, colInd):
-    '''
-    :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
-    :param globalList (list): objects in the global list 
-    :param threshold (double): threshold level. If the cost is bigger than this,
-                               it might be a clutter - reduce the probability of
-                               existence by alpha.
-    :param alpha, beta (double): coeffs to update the probabilities of 
-                                 existence
-    If a row (a sensor object) is not assigned to a column (an object in 
-    the global list), it may be a new object in the environment. Initialize a 
-    new object with probability of existence: beta.
-    :return: None
-    '''
-    alpha = getAlpha()
-    beta = getBeta()
-    thresh = getThreshold()
-    # reduce the probability of existence if it might be a clutter
-    for i, j in zip(rowInd, colInd):
-        if mahalanobisMatrix[i, j] > thresh:
-            globalList[j].pExistence -= alpha
-    # reduce the probability of existence of an object in the globalList 
-    # by gamma if it doesn't match with any sensor objs
-    pass
-    # initilialize a new object in the global lists by assigning a 
-    # probability of existence (alpha), if the sensor object doesn't match
-    # any objects in the globalList
-    pass
-    
+    def matchObjs(self):
+        '''
+        :return rowInd, colInd (np.array): An array of row indices and one of  
+                                           corresponding column indices giving 
+                                           the optimal assignment. 
+        This function applies the linear sum assignment problem, also known as 
+        minimum weight matching in bipartite graphs using Hungarian Method. 
+        Given a problem instance is described by a matrix cost matrix, 
+        where each C[i,j] is the cost of matching vertex i of the first partite set 
+        (a “worker”) and vertex j of the second set (a “job”). 
+        The goal is to find a complete assignment of workers to jobs of 
+        minimal cost.
+        '''
+        self.rowInd, self.colInd = linear_sum_assignment(mahalanobisMatrix)
 
-def getThreshold():
-    pass
+    def updateExistenceProbability(self, mahalanobisMatrix, globalList, thresh, 
+                                   alpha, beta, gamma, rowInd, colInd):
+        '''
+        :param mahalonobisMatrix (np.array): The cost matrix of the bipartite graph
+        :param globalList (list): objects in the global list 
+        :param thresh (double): threshold level. If the cost is bigger than this,
+                                it might be a clutter - reduce the probability of
+                                existence by alpha.
+        :param alpha, beta, gamma (double): coeffs to update the probabilities of 
+                                            existence
+        If a row (a sensor object) is not assigned to a column (an object in 
+        the global list), it may be a new object in the environment. Initialize a 
+        new object with probability of existence: beta.
+        :return globalList (list): updated globalList of obstacles
+        '''
+        alpha = self.getAlpha()
+        beta = self.getBeta()
+        thresh = self.getThreshold()
+        # reduce the probability of existence if it might be a clutter, reduce
+        # its probability of existence by alpha
+        for i, j in zip(self.rowInd, self.colInd):
+            if self.mahalanobisMatrix[i, j] > thresh:
+                self.globalList[j].pExistence -= alpha
+        
+        # reduce the probability of existence of an object in the globalList 
+        # by beta if it doesn't match with any sensor objs
+        notAssignedGlobals = np.setdiff1d(self.colInd, 
+                                          np.arange(len(self.globalList))
+        for i in notAssignedGlobals:
+            self.globalList[i].pExistence -= beta
+        
+        # initilialize a new object in the global lists by assigning a 
+        # probability of existence (gamma), if the sensor object doesn't match
+        # any objects in the globalList
+        notAssignedSensors = np.setdiff1d(self.rowInd, np.arange(
+                                 self.mahalanobisMatrix.shape[0])
+        for i in notAssignedSensors:
+            obj.pExistence =  
+            globalList.append(obj)
+        
 
-def getAlpha():
-    pass
+    def getThreshold(self):
+        pass
 
-def getBeta():
-    pass
+    def getAlpha(self):
+        pass
 
-def getGamma():
-    pass
+    def getBeta(self):
+        pass
+
+    def getGamma(self):
+        pass
