@@ -36,6 +36,9 @@ class Obstacle:
         self.f = f
 
 
+'''
+Sensor Class and Subclasses Require Edits...
+'''
 class Sensor:
     def __init__(self):
         pass
@@ -49,6 +52,10 @@ class Radar(Sensor):
         self.timeStamp = timeStamp
         self.obj = obj
         self.numObjects = numObjects
+    
+    # calls Sensor.spatialAlignment()
+    def spatialAlignment(self):
+        super(Radar, self).spatialAlignment()
 
 
 class Vision(Sensor):  
@@ -57,6 +64,10 @@ class Vision(Sensor):
         self.timeStamp = timeStamp
         self.obj = obj
         self.numObjects = numObjects
+    
+    # calls Sensor.spatialAlignment()
+    def spatialAlignment(self):
+        super(Vision, self).spatialAlignment()
 
 
 class Lane(Sensor):  
@@ -65,11 +76,18 @@ class Lane(Sensor):
         self.left = left
         self.right = right
 
+    # calls Sensor.spatialAlignment()
+    def spatialAlignment(self):
+        super(Lane, self).spatialAlignment()
+
 
 class IMU(Sensor):  
-    __slots__ = ['timeStamp', 'velocity', 'yawRate']
     def __init__(self, timeStamp, velocity, yawRate):
         super().__init__()
         self.timeStamp = timeStamp
         self.velocity = velocity
         self.yawRate = yawRate
+    
+    # calls Sensor.spatialAlignment()
+    def spatialAlignment(self):
+        super(IMU, self).spatialAlignment()
