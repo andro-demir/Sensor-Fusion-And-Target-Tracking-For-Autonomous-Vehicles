@@ -9,19 +9,22 @@ import numpy as np
 from scipy.spatial.distance import Mahalanobis
 from scipy.optimize import linear_sum_assignment
 
-class Association():
+class Association:
+    __slots__ = ['fusionList', 'sensorObjList', 'numfusionObjs', 
+                 'numSensorObjs', 'mahalanobisMatrix']
     def __init__(self, fusionList, sensorObjList):
         '''
-        :param fusionList (list): objects in the global list 
+        :param fusionList (list): objects in the global list. 
         :param sensorObjList (List): objects in the radar / vision sensor 
-                                     measurements
+                                     measurements.
+        :mahalanobisMatrix: The cost matrix of the bipartite graph.
         '''
         self.fusionList = fusionList
         self.sensorObjList = sensorObjList
         self.numfusionObjs = len(fusionList)
         self.numSensorObjs = len(self.sensorObjList)
         self.mahalanobisMatrix = np.zeros((self.numSensorObjs, 
-                                           self.numfusionObjs))
+                                         self.numfusionObjs))
 
     def getMahalanobisMatrix(self):
         '''
@@ -36,8 +39,8 @@ class Association():
                 IV = np.linalg.inv(V)
                 self.mahalanobisMatrix[j, i] = Mahalanobis(self.fusionList[i].
                                                                   stateVector, 
-                                                          self.sensorObjList[j]
-                                                              .stateVector, IV)
+                                                        self.sensorObjList[j].
+                                                             stateVector, IV)
 
     def matchObjs(self):
         '''
@@ -52,37 +55,35 @@ class Association():
         The goal is to find a complete assignment of workers to jobs of 
         minimal cost.
         '''
-        self.rowInd, self.colInd = linear_sum_assignment(self.mahalanobisMatrix
-                                                                              )
+        self.getMahalanobisMatrix()
+        rowInd, colInd = linear_sum_assignment(self.mahalanobisMatrix)
+        return rowInd, colInd
 
-    def updateExistenceProbability(self, mahalanobisMatrix, globalList, thresh, 
-                                   alpha, beta, gamma, rowInd, colInd):
+    def updateExistenceProbability(self, thresh, alpha, beta, gamma):
         '''
-        :param mahalonobisMatrix (np.array): The cost matrix of the bipartite 
-                                             graph
-        :param fusionList (list): objects in the global list 
         :param thresh (double): threshold level. If the cost is bigger than
                                 this, it might be a clutter - reduce the 
                                 probability of existence by alpha.
         :param alpha, beta, gamma (double): coeffs to update the probabilities  
                                             of existence
         If a row (a sensor object) is not assigned to a column (an object in 
-        the global list), it may be a new object in the environment. Initialize 
-        a new object with probability of existence: beta.
-        :return globalList (list): updated globalList of obstacles
+        the global(fusion) list), it may be a new object in the environment. 
+        Initialize a new object with probability of existence: beta.
+        :return fusionList (list): updated global list of obstacles
         '''
+        rowInd, colInd = self.matchObjs()
         alpha = self.getAlpha()
         beta = self.getBeta()
         thresh = self.getThreshold()
         # reduce the probability of existence if it might be a clutter, reduce
         # its probability of existence by alpha
-        for i, j in zip(self.rowInd, self.colInd):
+        for i, j in zip(rowInd, colInd):
             if self.mahalanobisMatrix[i, j] > thresh:
                 self.fusionList[j].pExistence -= alpha
         
         # reduce the probability of existence of an object in the globalList 
         # by beta if it doesn't match with any sensor objs
-        notAssignedGlobals = np.setdiff1d(self.colInd, 
+        notAssignedGlobals = np.setdiff1d(colInd, 
                                           np.arange(len(self.fusionList)))
         for i in notAssignedGlobals:
             self.fusionList[i].pExistence -= beta
@@ -90,8 +91,8 @@ class Association():
         # initilialize a new object in the global list by assigning a 
         # probability of existence (gamma), if the sensor object doesn't match
         # any objects in the globalList
-        notAssignedSensors = np.setdiff1d(self.rowInd, np.arange(
-                                self.mahalanobisMatrix.shape[0]))
+        notAssignedSensors = np.setdiff1d(rowInd, np.arange(
+                                            self.mahalanobisMatrix.shape[0]))
         for i in notAssignedSensors:
             self.sensorObjList[i].pExistence = gamma  
             self.fusionList.append(self.sensorObjList[i])   

@@ -12,7 +12,7 @@ from numpy import asarray
     c: Classification vector
     f: Feature vector
 '''
-class obstacle:
+class Obstacle:
     __slots__ = ['posX', 'posY', 'velX', 'velY', 'accX', 'accY', 'yaw', 
                  'yawRt', 'P', 'dim', 'dimUncertainty', 'pExistence', 'c', 'f',
                  'stateVector']
@@ -36,32 +36,40 @@ class obstacle:
         self.f = f
 
 
-class radar:  
-    __slots__ = ['timeStamp', 'obj', 'numObjects']
+class Sensor:
+    def __init__(self):
+        pass
+
+    def spatialAlignment(self):
+        pass
+
+class Radar(Sensor):  
     def __init__(self, timeStamp, obj, numObjects):
+        super().__init__()
         self.timeStamp = timeStamp
         self.obj = obj
         self.numObjects = numObjects
 
 
-class vision:  
-    __slots__ = ['timeStamp', 'obj', 'numObjects']
+class Vision(Sensor):  
     def __init__(self, timeStamp, obj, numObjects):
+        super().__init__()
         self.timeStamp = timeStamp
         self.obj = obj
         self.numObjects = numObjects
 
 
-class lane:  
-    __slots__ = ['left', 'right']
+class Lane(Sensor):  
     def __init__(self, left, right):
+        super().__init__()
         self.left = left
         self.right = right
 
 
-class IMU:  
+class IMU(Sensor):  
     __slots__ = ['timeStamp', 'velocity', 'yawRate']
     def __init__(self, timeStamp, velocity, yawRate):
+        super().__init__()
         self.timeStamp = timeStamp
         self.velocity = velocity
         self.yawRate = yawRate
