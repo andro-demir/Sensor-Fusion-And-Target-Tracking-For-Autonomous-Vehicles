@@ -109,3 +109,16 @@ class Association:
 
     def getGamma(self):
         return 1.0
+
+
+'''
+For data association --> do:
+
+# fusionList is the obstacles(objs) in the global list
+# and sensorObjList is the obstacles(objs) seen by a single sensor only
+Iterate for all sensorObjList(sensors): 
+    assc = Association(fusionList, sensorObjList)
+    assc.updateExistenceProbability()
+    # updated fusion list then becomes:
+    fusionList = assc.fusionList
+'''
