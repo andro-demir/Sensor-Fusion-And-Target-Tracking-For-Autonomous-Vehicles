@@ -10,33 +10,31 @@ from scipy.spatial.distance import Mahalanobis
 from scipy.optimize import linear_sum_assignment
 
 class Association():
-    def __init__(self, globalList, radarObjList, visionObjList):
+    def __init__(self, fusionList, sensorObjList):
         '''
-        :param globalList (list): objects in the global list 
-        :param radarObjList (List): objects in the radar sensor measurements
-        :param visionObjList (List): objects in the vision sensor measurements
+        :param fusionList (list): objects in the global list 
+        :param sensorObjList (List): objects in the radar / vision sensor 
+                                     measurements
         '''
-        self.globalList = globalList
-        self.radarObjList = radarObjList
-        self.visionObjList = visionObjList
-        self.sensorObjList = radarObjList + visionObjList
-        self.numGlobalObjs = len(globalList)
+        self.fusionList = fusionList
+        self.sensorObjList = sensorObjList
+        self.numfusionObjs = len(fusionList)
         self.numSensorObjs = len(self.sensorObjList)
         self.mahalanobisMatrix = np.zeros((self.numSensorObjs, 
-                                           self.numGlobalObjs))
+                                           self.numfusionObjs))
 
     def getMahalanobisMatrix(self):
         '''
         the statistical distance (Mahalanobis distance) between state vectors 
-        from a global object and a sensor object is evaluated. 
+        from a fusion object and a sensor object is evaluated. 
         '''
-        for i in self.numGlobalObjs:
+        for i in self.numfusionObjs:
             for j in self.numSensorObjs:
                 # innovation covariance between 2 state estimates (3.14):
-                V = np.cov(np.array(self.globalList[i].stateVector, 
+                V = np.cov(np.array(self.fusionList[i].stateVector, 
                                     self.sensorObjList[j].stateVector).T)
                 IV = np.linalg.inv(V)
-                self.mahalanobisMatrix[j, i] = Mahalanobis(self.globalList[i].
+                self.mahalanobisMatrix[j, i] = Mahalanobis(self.fusionList[i].
                                                                   stateVector, 
                                                           self.sensorObjList[j]
                                                               .stateVector, IV)
@@ -62,7 +60,7 @@ class Association():
         '''
         :param mahalonobisMatrix (np.array): The cost matrix of the bipartite 
                                              graph
-        :param globalList (list): objects in the global list 
+        :param fusionList (list): objects in the global list 
         :param thresh (double): threshold level. If the cost is bigger than
                                 this, it might be a clutter - reduce the 
                                 probability of existence by alpha.
@@ -80,37 +78,33 @@ class Association():
         # its probability of existence by alpha
         for i, j in zip(self.rowInd, self.colInd):
             if self.mahalanobisMatrix[i, j] > thresh:
-                self.globalList[j].pExistence -= alpha
+                self.fusionList[j].pExistence -= alpha
         
         # reduce the probability of existence of an object in the globalList 
         # by beta if it doesn't match with any sensor objs
         notAssignedGlobals = np.setdiff1d(self.colInd, 
-                                          np.arange(len(self.globalList)))
+                                          np.arange(len(self.fusionList)))
         for i in notAssignedGlobals:
-            self.globalList[i].pExistence -= beta
+            self.fusionList[i].pExistence -= beta
         
-        # initilialize a new object in the global lists by assigning a 
+        # initilialize a new object in the global list by assigning a 
         # probability of existence (gamma), if the sensor object doesn't match
         # any objects in the globalList
         notAssignedSensors = np.setdiff1d(self.rowInd, np.arange(
                                 self.mahalanobisMatrix.shape[0]))
-        numRadarObjs = len(self.radarObjList)
         for i in notAssignedSensors:
-            if i < numRadarObjs:
-                self.radarObjList[i].pExistence = gamma  
-                self.globalList.append(self.radarObjList[i])
-            else:
-                self.visionObjList[i-numRadarObjs].pExistence = gamma
-                self.globalList.append(self.visionObjList[i-numRadarObjs])     
+            self.sensorObjList[i].pExistence = gamma  
+            self.fusionList.append(self.sensorObjList[i])   
 
+    # Assigned 0 and 1 for simplicity in the first scenario.
     def getThreshold(self):
-        pass
+        return 0.0
 
     def getAlpha(self):
-        pass
+        return 0.0
 
     def getBeta(self):
-        pass
+        return 0.0
 
     def getGamma(self):
-        pass
+        return 1.0
