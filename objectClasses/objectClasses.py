@@ -8,9 +8,9 @@ class Obstacle:
         observed (detected) by any of the sensors.
         Attr:
             s_vector(ndarray[float]): an array of the following properties
-                pos_x/y(float): position on the respective axis
-                v_x/y(float): velocity on the respective axis
-                a_x/y(float): acceleration on the respective axis
+                pos_x/y/z(float): position on the respective axis
+                v_x/y/z(float): velocity on the respective axis
+                a_x/y/z(float): acceleration on the respective axis
                 yaw(float): yaw angle
                 r_yaw(float): yaw rate
             P(ndarray[float]):
@@ -21,17 +21,11 @@ class Obstacle:
             f()
             """
 
-    def __init__(self, pos_x, pos_y, v_x, v_y, a_x, a_y, yaw, r_yaw, P=[],
-                 dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None, f=None):
-        self.pos_x = pos_x
-        self.pos_y = pos_y
-        self.v_x = v_x
-        self.v_y = v_y
-        self.a_x = a_x
-        self.a_y = a_y
-        self.yaw = yaw
-        self.r_yaw = r_yaw
-        self.s_vector = asarray([pos_x, pos_y, v_x, v_y, a_x, a_y, yaw, r_yaw])
+    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, yaw, r_yaw,
+                 P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
+                 f=None):
+        self.s_vector = asarray([pos_x, pos_y, pos_z,
+                                 v_x, v_y, v_z, a_x, a_y, yaw, r_yaw])
         self.P = P
         self.dim = dim
         self.dim_uncertainty = dim_uncertainty
@@ -79,9 +73,10 @@ class SimSensor(object):
             tmp_noise = self.list_noise[idx_obj]
 
             list_obstacle.append(
-                Obstacle(tmp_state[0], tmp_state[1], tmp_state[2],
-                         tmp_state[3], tmp_state[4], tmp_state[5], 0, 0,
-                         P=tmp_noise))
+                Obstacle(pos_x=tmp_state[0], pos_y=tmp_state[1],
+                         pos_z=tmp_state[2], v_x=tmp_state[3], v_y=tmp_state[4],
+                         v_z=tmp_state[5], a_x=None, a_y=None,
+                         yaw=None, r_yaw=None, P=tmp_noise))
 
         return list_obstacle, time
 
