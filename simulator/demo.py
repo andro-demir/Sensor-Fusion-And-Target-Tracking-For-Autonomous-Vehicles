@@ -1,8 +1,10 @@
 import sys
 sys.path.append("..")
+import argparse
 import numpy as np
 from objectClasses.objectClasses import SimSensor
 from objectAssociation import Association 
+from time import perf_counter
 
 def createSensorEnvs():
     '''
@@ -44,4 +46,7 @@ def main():
 
 
 if __name__ == "__main__":
+    start = perf_counter()
     main()
+    duration = perf_counter() - start
+    print("Performance: %f secs" %duration)
