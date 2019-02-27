@@ -21,11 +21,13 @@ class Obstacle:
             f()
             """
 
-    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, yaw, r_yaw,
+    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z,
+                 a_x, a_y, yaw, r_yaw,
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
                  f=None):
         self.s_vector = asarray([pos_x, pos_y, pos_z,
-                                 v_x, v_y, v_z, a_x, a_y, yaw, r_yaw])
+                                 v_x, v_y, v_z, a_x, a_y,
+                                 yaw, r_yaw])
         self.P = P
         self.dim = dim
         self.dim_uncertainty = dim_uncertainty
