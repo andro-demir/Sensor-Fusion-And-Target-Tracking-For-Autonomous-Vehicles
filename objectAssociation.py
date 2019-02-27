@@ -6,12 +6,10 @@ Contributors to this code
 '''
 
 import numpy as np
-from scipy.spatial.distance import Mahalanobis
+from scipy.spatial.distance import mahalanobis
 from scipy.optimize import linear_sum_assignment
 
 class Association:
-    __slots__ = ['fusionList', 'sensorObjList', 'numfusionObjs', 
-                 'numSensorObjs', 'mahalanobisMatrix']
     def __init__(self, fusionList, sensorObjList):
         '''
         :param fusionList (list): objects in the global list. 
@@ -24,7 +22,7 @@ class Association:
         self.numfusionObjs = len(fusionList)
         self.numSensorObjs = len(self.sensorObjList)
         self.mahalanobisMatrix = np.zeros((self.numSensorObjs, 
-                                         self.numfusionObjs))
+                                           self.numfusionObjs))
 
     def getMahalanobisMatrix(self):
         '''
@@ -34,13 +32,13 @@ class Association:
         for i in self.numfusionObjs:
             for j in self.numSensorObjs:
                 # innovation covariance between 2 state estimates (3.14):
-                V = np.cov(np.array(self.fusionList[i].stateVector, 
-                                    self.sensorObjList[j].stateVector).T)
+                V = np.cov(np.array(self.fusionList[i].s_vector, 
+                                    self.sensorObjList[j].s_vector).T)
                 IV = np.linalg.inv(V)
-                self.mahalanobisMatrix[j, i] = Mahalanobis(self.fusionList[i].
-                                                                  stateVector, 
+                self.mahalanobisMatrix[j, i] = mahalanobis(self.fusionList[i].
+                                                                     s_vector, 
                                                         self.sensorObjList[j].
-                                                             stateVector, IV)
+                                                                s_vector, IV)
 
     def matchObjs(self):
         '''
@@ -59,7 +57,7 @@ class Association:
         rowInd, colInd = linear_sum_assignment(self.mahalanobisMatrix)
         return rowInd, colInd
 
-    def updateExistenceProbability(self, thresh, alpha, beta, gamma):
+    def updateExistenceProbability(self):
         '''
         :param thresh (double): threshold level. If the cost is bigger than
                                 this, it might be a clutter - reduce the 
@@ -72,9 +70,10 @@ class Association:
         :return fusionList (list): updated global list of obstacles
         '''
         rowInd, colInd = self.matchObjs()
+        thresh = self.getThreshold()
         alpha = self.getAlpha()
         beta = self.getBeta()
-        thresh = self.getThreshold()
+        gamma = self.getGamma()
         # reduce the probability of existence if it might be a clutter, reduce
         # its probability of existence by alpha
         for i, j in zip(rowInd, colInd):
