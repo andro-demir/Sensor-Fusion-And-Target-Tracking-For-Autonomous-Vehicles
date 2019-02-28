@@ -1,4 +1,4 @@
-from temporal_alignment import *
+from temporalAlignment import *
 from kalmanFilter import *
 import numpy as np
 import matplotlib.pyplot as plt

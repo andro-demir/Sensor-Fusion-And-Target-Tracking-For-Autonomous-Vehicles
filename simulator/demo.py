@@ -1,10 +1,12 @@
 import sys
+
 sys.path.append("..")
 import argparse
 import numpy as np
 from objectClasses.objectClasses import SimSensor
-from objectAssociation import Association 
+from objectAssociation import Association
 from time import perf_counter
+
 
 def createSensorEnvs():
     '''
@@ -15,6 +17,7 @@ def createSensorEnvs():
     radar_rear = SimSensor('./radar_rear.mat')
     radar_front = SimSensor('./radar_front.mat')
     return cam_rear, cam_front, radar_rear, radar_front
+
 
 def main():
     cam_rear, cam_front, radar_rear, radar_front = createSensorEnvs()
@@ -46,7 +49,7 @@ def main():
             assc.updateExistenceProbability()
             # to get the H matrix call assc.rowInd and assc.colInd at each iter
             # (You might need this when you do fusion)
-            
+
             # to update the fusion list:
             fusionList = assc.fusionList
             for obstacle in fusionList:
@@ -58,4 +61,4 @@ if __name__ == "__main__":
     start = perf_counter()
     main()
     duration = perf_counter() - start
-    print("Performance: %f secs" %duration)
+    print("Performance: %f secs" % duration)

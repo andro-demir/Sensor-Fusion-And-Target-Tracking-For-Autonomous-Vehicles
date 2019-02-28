@@ -41,7 +41,7 @@ def kf_measurement_update(fusion_obj, sensor_obj):
 debug = False
 
 if debug:
-    from temporal_alignment import *
+    from temporalAlignment import *
     class object():  # dummy object class
         def __init__(self, is_sensor=False):
             self.timeStamp = 0

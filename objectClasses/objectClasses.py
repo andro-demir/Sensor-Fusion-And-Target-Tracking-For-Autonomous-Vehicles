@@ -1,6 +1,7 @@
 from numpy import asarray
 import numpy as np
 import scipy.io as sio
+from helper_functions import *
 
 
 class Obstacle:
@@ -21,11 +22,12 @@ class Obstacle:
             f()
             """
 
-    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, yaw, r_yaw,
+    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, a_z, yaw,
+                 r_yaw,
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
                  f=None):
         self.s_vector = asarray([pos_x, pos_y, pos_z,
-                                 v_x, v_y, v_z, a_x, a_y, yaw, r_yaw])
+                                 v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw])
         self.P = P
         self.dim = dim
         self.dim_uncertainty = dim_uncertainty
@@ -75,9 +77,54 @@ class SimSensor(object):
             list_obstacle.append(
                 Obstacle(pos_x=tmp_state[0], pos_y=tmp_state[1],
                          pos_z=tmp_state[2], v_x=tmp_state[3], v_y=tmp_state[4],
-                         v_z=tmp_state[5], a_x=None, a_y=None,
+                         v_z=tmp_state[5], a_x=None, a_y=None, a_z=None,
                          yaw=None, r_yaw=None, P=tmp_noise))
 
         return list_obstacle, time
 
 
+# TODO: Sensor Class and Subclasses Require Edits...
+
+class Sensor:
+    def __init__(self, timeStamp, obj_list, H_sensor_veh=None):
+        self.timeStamp = timeStamp
+        self.obj_list = obj_list
+        self.H_sensor_veh = H_sensor_veh
+        pass
+
+    def spatialAlignment(self):
+        spatial_alignment(self.obj_list,
+                          self.H_sensor_veh)  # from helper functions
+        pass
+
+
+class Radar(Sensor):
+    def __init__(self, timeStamp, obj_list, H_sensor_veh):
+        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
+
+
+class Vision(Sensor):
+    def __init__(self, timeStamp, obj_list, H_sensor_veh):
+        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
+
+
+class Lane(Sensor):
+    def __init__(self, left, right,
+                 time_stamp):  # TODO: not sure if sensor to veh transformation matrix should be incl
+        Sensor.__init__(self, time_stamp, None)
+        self.left = left
+        self.right = right
+
+
+class IMU(Sensor):
+    def __init__(self, timeStamp, obj_list, velocity, yaw_rate, H_sensor_veh):
+        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
+
+        # TODO: what are these? why only in IMU?
+        self.velocity = velocity
+        self.yaw_rate = yaw_rate
+
+
+class fusionList(list):
+    def __init__(self, timeStamp):
+        self.timeStamp = timeStamp
