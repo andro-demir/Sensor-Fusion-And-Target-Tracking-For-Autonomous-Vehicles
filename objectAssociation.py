@@ -29,16 +29,27 @@ class Association:
         the statistical distance (Mahalanobis distance) between state vectors 
         from a fusion object and a sensor object is evaluated. 
         '''
-        for i in self.numfusionObjs:
-            for j in self.numSensorObjs:
+        for i in range(self.numfusionObjs):
+            for j in range(self.numSensorObjs):
                 # innovation covariance between 2 state estimates (3.14):
-                V = np.cov(np.array(self.fusionList[i].s_vector, 
-                                    self.sensorObjList[j].s_vector).T)
+                # first remove None elements from the state vectors:
+                self.fusionList[i].s_vector = remove_none(
+                                              self.fusionList[i].s_vector)
+                self.sensorObjList[i].s_vector = remove_none(
+                                                self.sensorObjList[i].s_vector)
+                #print(self.fusionList[i].s_vector)
+                #print(self.sensorObjList[j].s_vector)
+                V = np.vstack((np.asarray(self.fusionList[i].s_vector), 
+                               np.asarray(self.sensorObjList[j].s_vector)))
+                V = np.cov(V.T)
+                #print(V)
                 IV = np.linalg.inv(V)
-                self.mahalanobisMatrix[j, i] = mahalanobis(self.fusionList[i].
-                                                                     s_vector, 
-                                                        self.sensorObjList[j].
-                                                                s_vector, IV)
+                #print(IV)
+                self.mahalanobisMatrix[j,i] = mahalanobis(self.fusionList[i].
+                                                                    s_vector, 
+                                                       self.sensorObjList[j].
+                                                               s_vector, IV)
+                #print(self.mahalanobisMatrix)
 
     def matchObjs(self):
         '''
@@ -91,7 +102,7 @@ class Association:
         # probability of existence (gamma), if the sensor object doesn't match
         # any objects in the globalList
         notAssignedSensors = np.setdiff1d(rowInd, np.arange(
-                                            self.mahalanobisMatrix.shape[0]))
+                                          self.mahalanobisMatrix.shape[0]))
         for i in notAssignedSensors:
             self.sensorObjList[i].pExistence = gamma  
             self.fusionList.append(self.sensorObjList[i])   
@@ -108,7 +119,11 @@ class Association:
 
     def getGamma(self):
         return 1.0
+    
 
+def remove_none(l):
+    return [x for x in l if x is not None]
+    
 
 '''
 For data association --> do:

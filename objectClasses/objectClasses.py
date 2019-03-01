@@ -22,7 +22,8 @@ class Obstacle:
             f()
             """
 
-    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw,
+    def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, a_z, yaw,
+                 r_yaw,
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
                  f=None):
         self.s_vector = asarray([pos_x, pos_y, pos_z,
@@ -102,7 +103,8 @@ class Sensor:
         pass
 
     def spatialAlignment(self):
-        spatial_alignment(self.obj_list, self.H_sensor_veh)  # from helper functions
+        spatial_alignment(self.obj_list,
+                          self.H_sensor_veh)  # from helper functions
         pass
 
 
