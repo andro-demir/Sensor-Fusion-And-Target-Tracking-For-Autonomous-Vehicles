@@ -123,43 +123,47 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         # remove the rows and columns with nans
         s_vector_s = np.copy(sensor_obj.s_vector)
         s_vector_f = np.copy(fusion_obj.s_vector)
-        not_nan_idx = np.where(np.invert(np.isnan(s_vector_s)))[0]
+        # not_nan_idx = np.where(np.invert(np.isnan(s_vector_s)))[0]
 
-        # nan_idx_fus = np.where(np.isnan(s_vector_f))[0]
-        # nan_idx_sens = np.where(np.isnan(s_vector_s))[0]
-        #
-        # not_nan_idx = np.array(list(set(range(s_vector_f.shape[0])) - set(
-        #     np.concatenate((nan_idx_fus, nan_idx_sens)))))
+        not_nan_idx_fus = set(np.where(np.invert(np.isnan(s_vector_f)))[0])
+        not_nan_idx_sens = set(np.where(np.invert(np.isnan(s_vector_s)))[0])
+
+        not_nan_idx = np.array(
+            list(not_nan_idx_fus.intersection(not_nan_idx_sens)))
+
+        # get the idx of first measurements if there is any
+        first_time_measurement_idx = np.array(list(not_nan_idx_sens - not_nan_idx_fus))
 
         s_vector_s = s_vector_s[not_nan_idx]
-        s_vector_f = np.copy(fusion_obj.s_vector)[not_nan_idx]
+        s_vector_f = s_vector_f[not_nan_idx]
 
         P_f = np.copy(fusion_obj.P)[not_nan_idx, :][:, not_nan_idx]
         P_s = np.copy(sensor_obj.P)[not_nan_idx, :][:, not_nan_idx]
         H = sensor_obj.H[not_nan_idx, :][:, not_nan_idx]
 
         # kalman filter equations:
-        # R is the cov of the obs noise
+        # P_s is the cov of the obs noise
         S = np.dot(np.dot(H, P_f), H.T) + P_s
 
         # K is the kalman gain
         K = np.dot(np.dot(P_f, H.T), np.linalg.inv(S))
         # Updated aposteriori state estimate
         x = s_vector_f + np.dot(K, s_vector_s - np.dot(H, s_vector_f))
-
         # Updated aposteriori estimate covariance
         P = np.dot(np.eye(s_vector_f.shape[0]) - np.dot(K, H), P_f)
+
         # update global object state and covariance
-
-        # fusion_obj.P[np.where(sensor_obj.P != None)] = P[
-        #     np.where(sensor_obj.P != None)]
-        #
-        # fusion_obj.s_vector[np.where(sensor_obj.s_vector != None)] = x[
-        #     np.where(sensor_obj.s_vector != None)]
-
         fusion_obj.P[not_nan_idx, :][:, not_nan_idx] = P
 
         fusion_obj.s_vector[not_nan_idx] = x
+
+        # if there is any new measurements write them to fusion state
+        if first_time_measurement_idx:
+            fusion_obj.s_vector[first_time_measurement_idx] = sensor_obj.s_vector[
+                first_time_measurement_idx]
+            fusion_obj.P[first_time_measurement_idx, :][:,
+            first_time_measurement_idx] = sensor_obj.P[first_time_measurement_idx, :][:,
+                                          first_time_measurement_idx]
 
     pass
 
@@ -207,7 +211,6 @@ if debug:
         if not np.isnan(measurement).all():
             sensor1.timeStamp = idx
             noise = 5. * np.random.normal(size=(11,))
-            # noise[np.where(sensor_obj.s_vector == None)] = None
             sensor_obj.s_vector = measurement + noise
 
             temporal_alignment(fusion_list, sensor1.timeStamp)
