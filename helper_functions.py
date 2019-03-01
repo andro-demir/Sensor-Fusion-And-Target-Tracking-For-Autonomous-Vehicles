@@ -96,8 +96,6 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
     pass
 
 
-# TODO: following function is not complete yet
-
 def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices):
     """
     When there is a new measurement in the sensor, run the following kalman

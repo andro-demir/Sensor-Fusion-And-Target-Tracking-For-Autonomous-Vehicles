@@ -1,96 +1,64 @@
-from temporalAlignment import *
-from kalmanFilter import *
+from objectClasses.objectClasses import Obstacle
+from objectClasses.objectClasses import Sensor, fusionList
 import numpy as np
 import matplotlib.pyplot as plt
-
-class object():  # dummy object class
-    def __init__(self, is_sensor=False):
-        self.timeStamp = 0
-        self.x = np.zeros((8,))  # random state
-        self.P = 0.1 * np.random.normal() * np.eye(8)    # random cov
-        delta = 1  # !
-        self.F = np.array([[1, 0, delta, 0, 0.5*delta**2, 0, 0, 0],
-                          [0, 1, 0, delta, 0, 0.5*delta**2, 0, 0],
-                          [0, 0, 1, 0, delta, 0, 0, 0],
-                          [0, 0, 0, 1, 0, delta, 0, 0],
-                          [0, 0, 0, 0, 1, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 1, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 1, delta],
-                          [0, 0, 0, 0, 0, 0, 0, 0]])
-        self.u = np.zeros((8,))  # zeros for constant vel model, input should also change.
-        self.w = 0.1 * np.random.normal(size=(8,))  # process noise
-        Q = np.zeros((8,8))
-        Q[3:5, 3:5] = 0.1 * np.random.normal() * np.eye(2)  # noise added only at the last derivatives
-        Q[7, 7] = 0.1 * np.random.normal()
-        self.Q = Q
-
-        if is_sensor:  # add the other params for sensor: this is a dummy example normally sensor and fusion object might be different
-            self.R = 0.1 * np.random.normal() * np.eye(8)  # measurement noise covariance
-            self.H = np.eye(8)
-        pass
-
-    def __setattr__(self, key, value):
-        if key == 'delta':  # F is delta dependent when delta is updated F should be updated too
-            super(object, self).__setattr__(key, value)
-            F = np.array([[1, 0, self.delta, 0, 0.5 * self.delta ** 2, 0, 0, 0],
-                          [0, 1, 0, self.delta, 0, 0.5 * self.delta ** 2, 0, 0],
-                          [0, 0, 1, 0, self.delta, 0, 0, 0],
-                          [0, 0, 0, 1, 0, self.delta, 0, 0],
-                          [0, 0, 0, 0, 1, 0, 0, 0],
-                          [0, 0, 0, 0, 0, 1, 0, 0],
-                          [0, 0, 0, 0, 0, 0, 1, self.delta],
-                          [0, 0, 0, 0, 0, 0, 0, 0]])
-            super(object, self).__setattr__('F', F)
-        else: super(object, self).__setattr__(key, value)
-
-        pass
+from helper_functions import temporal_alignment, kf_measurement_update
 
 # create objects
-fusion_obj = object()
-sensor_obj = object(is_sensor=True)
+P_init = np.eye(11)
+fusion_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, None, None, None, P=np.eye(11))
+sensor_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, None, None, None, P=np.eye(11))
+fusion_list = fusionList(timeStamp=0)
+fusion_list.append(fusion_obj)
+sensor_list = fusionList(timeStamp=0)
+sensor_list.append(sensor_obj)
 
+sensor1 = Sensor(timeStamp=0, obj_list=sensor_list, H_sensor_veh=np.eye(11))
+
+number_of_samples = 50
 # create true states
 vel_x, vel_y = 5., 3.
-true_states = np.zeros((50,8))  # 50 samples
-true_vel_x = vel_x * np.ones((50,))  # const velocity
-true_pos_x = np.arange(0,50 * vel_x, vel_x)  #
-true_vel_y = vel_y * np.ones((50,))  # const velocity
-true_pos_y = np.arange(0,50 * vel_y, vel_y)  #
+vals = np.arange(0,number_of_samples)
+true_states = np.zeros((number_of_samples, 11))  # number_of_samples samples
+true_vel_x = vel_x * np.ones((number_of_samples,))  # const velocity
+true_pos_x = np.arange(0, number_of_samples * vel_x, vel_x)  #
+true_vel_y = vel_y * np.ones((number_of_samples,))  # const velocity
+true_pos_y = np.arange(0, number_of_samples * vel_y, vel_y)  #
 
 true_states[:, 0] = true_pos_x
-true_states[:, 2] = true_vel_x
+true_states[:, 3] = true_vel_x
 true_states[:, 1] = true_pos_y
-true_states[:, 3] = true_vel_y
+true_states[:, 4] = true_vel_y
 
 # add measurements with noise
-measurements = np.empty((50, 8))
+measurements = np.empty((number_of_samples, 11))
 measurements[:] = np.nan
 measurements_time = 3  # get measurements in every 3 secs
 measurements[::measurements_time, :] = true_states[::measurements_time, :]
+measurements[::measurements_time, np.isnan(sensor_obj.s_vector)] = np.nan
+
 predicted_state = []
-for idx, (true_state, measurement) in enumerate(zip(true_states,measurements)):
-    if not np.isnan(measurement).any():
-        sensor_obj.timeStamp = idx
-        sensor_obj.x = measurement + 5. * np.random.normal(size=(8,))# noise added
+for idx, (true_state, measurement) in enumerate(zip(true_states, measurements)):
+    if not np.isnan(measurement).all():
+        sensor1.timeStamp = idx
+        noise = 5. * np.random.normal(size=(11,))
+        sensor_obj.s_vector = measurement + noise
 
-        temporal_alignment(fusion_obj, sensor_obj.timeStamp)
-        kf_measurement_update(fusion_obj,sensor_obj)
+        temporal_alignment(fusion_list, sensor1.timeStamp)
+        kf_measurement_update(fusion_list, sensor1.obj_list, ((0, 0), (0, 0)))
 
-    predicted_state.append(fusion_obj.x)
+    predicted_state.append(np.copy(fusion_obj.s_vector))
 
 predicted_state = np.array(predicted_state)
 
+fig, axs = plt.subplots(1, )
 
-fig, axs = plt.subplots(1,)
-
-l1 = axs.plot(predicted_state[:, 0], predicted_state[:, 1], label='Predicted Position')
+l1 = axs.plot(predicted_state[:, 0], predicted_state[:, 1],
+              label='Predicted Position')
 l2 = axs.plot(true_states[:, 0], true_states[:, 1], label='True Position')
 
 axs.axis()
 axs.legend()
 fig.suptitle('Kalman Filter')
-fig.set_size_inches((7,3))
+fig.set_size_inches((7, 3))
 plt.show()
-
-
-
