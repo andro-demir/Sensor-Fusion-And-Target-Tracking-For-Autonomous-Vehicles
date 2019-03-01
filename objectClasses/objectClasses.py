@@ -26,13 +26,23 @@ class Obstacle:
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
                  f=None):
         self.s_vector = asarray([pos_x, pos_y, pos_z,
-                                 v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw])
+                                 v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw]).astype(float)
         self.P = P
         self.dim = dim
         self.dim_uncertainty = dim_uncertainty
         self.p_existence = p_existence
         self.c = c
         self.f = f
+        self.H = np.eye(self.s_vector.shape[0])
+        # self.create_observation_matrix()
+        self.u = np.zeros(shape=(self.s_vector.shape[0],))  # zero input model
+
+    def create_observation_matrix(self):
+        H = np.eye(self.s_vector.shape[0])
+        # H[np.where(self.s_vector == None), np.where(self.s_vector == None)] = 0.
+        H[np.isnan(self.s_vector), np.isnan(self.s_vector)] = 0.
+        self.H = H
+        pass
 
 
 class SimSensor(object):
@@ -76,7 +86,7 @@ class SimSensor(object):
             list_obstacle.append(
                 Obstacle(pos_x=tmp_state[0], pos_y=tmp_state[1],
                          pos_z=tmp_state[2], v_x=tmp_state[3], v_y=tmp_state[4],
-                         v_z=tmp_state[5], a_x=None, a_y=None,
+                         v_z=tmp_state[5], a_x=None, a_y=None, a_z=None,
                          yaw=None, r_yaw=None, P=tmp_noise))
 
         return list_obstacle, time
@@ -107,7 +117,8 @@ class Vision(Sensor):
 
 
 class Lane(Sensor):
-    def __init__(self, left, right, time_stamp):  # TODO: not sure if sensor to veh transformation matrix should be incl
+    def __init__(self, left, right,
+                 time_stamp):  # TODO: not sure if sensor to veh transformation matrix should be incl
         Sensor.__init__(self, time_stamp, None)
         self.left = left
         self.right = right
@@ -120,6 +131,7 @@ class IMU(Sensor):
         # TODO: what are these? why only in IMU?
         self.velocity = velocity
         self.yaw_rate = yaw_rate
+
 
 class fusionList(list):
     def __init__(self, timeStamp):
