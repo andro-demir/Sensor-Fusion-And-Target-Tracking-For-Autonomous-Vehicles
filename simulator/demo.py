@@ -31,41 +31,41 @@ def main():
     time_frame = list(np.unique(np.concatenate(time_frame)))
 
     # Initialize the fusion list:
-    list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[0])
-    list_object_cam_front, _ = cam_front.return_obstacle_list(time_frame[0])
-    list_object_radar_front, _ = radar_rear.return_obstacle_list(time_frame[0])
-    list_object_radar_rear, _ = radar_front.return_obstacle_list(time_frame[0])
-    fusionList = fusionListCls(time_frame[0])
-    fusionList.extend(list_object_cam_front)
+    list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(
+        time_frame[0])
+    list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
+        time_frame[0])
+    list_object_radar_front, _, obj_ids_radar_front = radar_front.return_obstacle_list(
+        time_frame[0])
+    list_object_radar_rear, _, obj_ids_radar_rear = radar_rear.return_obstacle_list(
+        time_frame[0])
 
-    cam_front_object_counter = 0
-    radar_front_object_counter = 0
-    tracked_object_id = 1
+    fusionList = fusionListCls(time_frame[0])
+    fusionList.extend(list_object_radar_rear)
+
+    tracked_object_id = 0
     fusion_object_states = []
 
     for time in time_frame:
-        list_object_cam_rear, _ = cam_rear.return_obstacle_list(time)
-        list_object_cam_front, _ = cam_front.return_obstacle_list(time)
-        list_object_radar_front, _ = radar_front.return_obstacle_list(time)
-        list_object_radar_rear, _ = radar_rear.return_obstacle_list(time)
+        list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(time)
+        list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
+            time)
+        list_object_radar_front, _, obj_ids_radar_front = radar_front.return_obstacle_list(
+            time)
+        list_object_radar_rear, _, obj_ids_radar_rear = radar_rear.return_obstacle_list(
+            time)
 
         # Sensor data association
         for sensor_idx, sensorObjList in enumerate(
-                [list_object_cam_front]):
-            for obj in sensorObjList:
-                if cam_front.list_object_id[
-                                    cam_front_object_counter] == tracked_object_id:
-
+                [list_object_radar_rear]):
+            for obj_idx, obj in enumerate(sensorObjList):
+                if obj_ids_radar_rear[obj_idx] == tracked_object_id:
+                    print('Got Measurement')
                     temporal_alignment(fusionList, time)
                     kf_measurement_update(fusionList, [obj], ([0], [0]))
 
-            if sensor_idx == 0:
-                cam_front_object_counter += 1
-            elif sensor_idx == 1:
-                radar_front_object_counter += 1
-
         fusion_object_states.append(np.copy(fusionList[0].s_vector))
-
+        #
         # assc = Association(fusionList, sensorObjList)
         # assc.updateExistenceProbability()
         # # to get the H matrix call assc.rowInd and assc.colInd at each iter
@@ -77,6 +77,8 @@ def main():
         #     print("Time: %f, State Vector:" %time)
         #     print(obstacle.s_vector)
     fusion_object_states = np.array(fusion_object_states)
+    # radar_rear_measurements = radar_rear.list_state[
+    #     np.where(np.array(radar_rear.list_object_id) == tracked_object_id)[0]]
     print('done')
 
 

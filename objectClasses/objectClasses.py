@@ -79,7 +79,7 @@ class SimSensor(object):
                 """
         time_idx = np.where(self.list_time == time)[0]
         list_obstacle = []
-
+        ids_obstacle = []
         for idx_obj in list(time_idx):
             tmp_state = self.list_state[idx_obj]
             tmp_noise = self.list_noise[idx_obj]
@@ -89,8 +89,8 @@ class SimSensor(object):
                          pos_z=tmp_state[2], v_x=tmp_state[3], v_y=tmp_state[4],
                          v_z=tmp_state[5], a_x=None, a_y=None, a_z=None,
                          yaw=None, r_yaw=None, P=tmp_noise))
-
-        return list_obstacle, time
+            ids_obstacle.append(self.list_object_id[idx_obj])
+        return list_obstacle, time, ids_obstacle
 
 
 # TODO: Sensor Class and Subclasses Require Edits...
