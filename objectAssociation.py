@@ -8,6 +8,8 @@ Contributors to this code
 import numpy as np
 from scipy.spatial.distance import mahalanobis
 from scipy.optimize import linear_sum_assignment
+from scipy.linalg import inv, pinv
+from sklearn.preprocessing import normalize
 
 class Association:
     def __init__(self, fusionList, sensorObjList):
@@ -15,41 +17,47 @@ class Association:
         :param fusionList (list): objects in the global list. 
         :param sensorObjList (List): objects in the radar / vision sensor 
                                      measurements.
-        :mahalanobisMatrix: The cost matrix of the bipartite graph.
         '''
         self.fusionList = fusionList
         self.sensorObjList = sensorObjList
-        self.numfusionObjs = len(fusionList)
-        self.numSensorObjs = len(self.sensorObjList)
-        self.mahalanobisMatrix = np.zeros((self.numSensorObjs, 
-                                           self.numfusionObjs))
+        self.numFusionObjs = len(fusionList)
+        self.numSensorObjs = len(sensorObjList)
 
     def getMahalanobisMatrix(self):
         '''
         the statistical distance (Mahalanobis distance) between state vectors 
         from a fusion object and a sensor object is evaluated. 
+        mahalanobisMatrix: The cost matrix of the bipartite graph.
         '''
-        for i in range(self.numfusionObjs):
+        mahalanobisMatrix = np.zeros((self.numSensorObjs, 
+                                      self.numFusionObjs))
+        #print(self.numSensorObjs, self.numFusionObjs)
+        #print("Mahalanobis matrix:\n", mahalanobisMatrix)
+        for i in range(self.numFusionObjs):
+            # first remove None elements from the state vector:
+            self.fusionList[i].s_vector = remove_none(
+                                          self.fusionList[i].s_vector)
+            #print("Fusion List state vector:\n", self.fusionList[i].s_vector)
             for j in range(self.numSensorObjs):
+                # first remove None elements from the state vector:
+                self.sensorObjList[j].s_vector = remove_none(
+                                             self.sensorObjList[j].s_vector)
+                #print("Sensor state vector:\n", self.sensorObjList[j].s_vector)
                 # innovation covariance between 2 state estimates (3.14):
-                # first remove None elements from the state vectors:
-                self.fusionList[i].s_vector = remove_none(
-                                              self.fusionList[i].s_vector)
-                self.sensorObjList[i].s_vector = remove_none(
-                                                self.sensorObjList[i].s_vector)
-                #print(self.fusionList[i].s_vector)
-                #print(self.sensorObjList[j].s_vector)
-                V = np.vstack((np.asarray(self.fusionList[i].s_vector), 
-                               np.asarray(self.sensorObjList[j].s_vector)))
+                V = np.stack((np.asarray(self.fusionList[i].s_vector), 
+                              np.asarray(self.sensorObjList[j].s_vector)), 
+                              axis=0)
                 V = np.cov(V.T)
-                #print(V)
-                IV = np.linalg.inv(V)
-                #print(IV)
-                self.mahalanobisMatrix[j,i] = mahalanobis(self.fusionList[i].
-                                                                    s_vector, 
-                                                       self.sensorObjList[j].
-                                                               s_vector, IV)
-                #print(self.mahalanobisMatrix)
+                #print("covariance matrix:\n", V)
+                IV = pinv(V) 
+                #print("inverse of the covariance matrix:\n", IV)
+                mahalanobisMatrix[j,i] = mahalanobis(self.fusionList[i].
+                                                               s_vector, 
+                                                  self.sensorObjList[j].
+                                                          s_vector, IV)
+                #print("Mahalanobis matrix:\n", mahalanobisMatrix)
+                #print(40*"--")
+        return mahalanobisMatrix
 
     def matchObjs(self):
         '''
@@ -64,9 +72,9 @@ class Association:
         The goal is to find a complete assignment of workers to jobs of 
         minimal cost.
         '''
-        self.getMahalanobisMatrix()
-        rowInd, colInd = linear_sum_assignment(self.mahalanobisMatrix)
-        return rowInd, colInd
+        mahalanobisMatrix = self.getMahalanobisMatrix()
+        rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
+        return mahalanobisMatrix, rowInd, colInd
 
     def updateExistenceProbability(self):
         '''
@@ -80,7 +88,7 @@ class Association:
         Initialize a new object with probability of existence: beta.
         :return fusionList (list): updated global list of obstacles
         '''
-        rowInd, colInd = self.matchObjs()
+        mahalanobisMatrix, rowInd, colInd = self.matchObjs()
         thresh = self.getThreshold()
         alpha = self.getAlpha()
         beta = self.getBeta()
@@ -88,24 +96,26 @@ class Association:
         # reduce the probability of existence if it might be a clutter, reduce
         # its probability of existence by alpha
         for i, j in zip(rowInd, colInd):
-            if self.mahalanobisMatrix[i, j] > thresh:
-                self.fusionList[j].pExistence -= alpha
+            if mahalanobisMatrix[i, j] > thresh:
+                self.fusionList[j].p_existence -= alpha
         
         # reduce the probability of existence of an object in the globalList 
         # by beta if it doesn't match with any sensor objs
         notAssignedGlobals = np.setdiff1d(colInd, 
-                                          np.arange(len(self.fusionList)))
+                                          np.arange(self.numFusionObjs))
         for i in notAssignedGlobals:
-            self.fusionList[i].pExistence -= beta
+            self.fusionList[i].p_existence -= beta
         
         # initilialize a new object in the global list by assigning a 
         # probability of existence (gamma), if the sensor object doesn't match
         # any objects in the globalList
-        notAssignedSensors = np.setdiff1d(rowInd, np.arange(
-                                          self.mahalanobisMatrix.shape[0]))
+        notAssignedSensors = np.setdiff1d(rowInd, 
+                                          np.arange(self.numSensorObjs))
         for i in notAssignedSensors:
-            self.sensorObjList[i].pExistence = gamma  
-            self.fusionList.append(self.sensorObjList[i])   
+            self.sensorObjList[i].p_existence = gamma  
+            self.fusionList.append(self.sensorObjList[i])  
+
+        return self.fusionList 
 
     # Assigned 0 and 1 for simplicity in the first scenario.
     def getThreshold(self):

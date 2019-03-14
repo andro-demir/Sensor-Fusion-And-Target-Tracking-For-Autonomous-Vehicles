@@ -35,26 +35,23 @@ def main():
     list_object_radar_rear, _ = radar_front.return_obstacle_list(time_frame[0])
     fusionList = (list_object_cam_front + list_object_cam_rear +
                   list_object_radar_front + list_object_radar_rear)  
-
-    for time in time_frame:
-        list_object_cam_rear, _ = cam_rear.return_obstacle_list(time)
-        list_object_cam_front, _ = cam_front.return_obstacle_list(time)
-        list_object_radar_front, _ = radar_rear.return_obstacle_list(time)
-        list_object_radar_rear, _ = radar_front.return_obstacle_list(time)
+    # We created the fusionList at time,
+    # Get the sensorObjectList at time+1
+    for idx, _ in enumerate(time_frame[:-1]):
+        list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[idx+1])
+        list_object_cam_front, _ = cam_front.return_obstacle_list(time_frame[idx+1])
+        list_object_radar_front, _ = radar_rear.return_obstacle_list(time_frame[idx+1])
+        list_object_radar_rear, _ = radar_front.return_obstacle_list(time_frame[idx+1])
         
         # Sensor data association
         for sensorObjList in ([list_object_cam_front] + [list_object_cam_rear] +
                               [list_object_radar_front] + [list_object_radar_rear]):
             assc = Association(fusionList, sensorObjList)
-            assc.updateExistenceProbability()
-            # to get the H matrix call assc.rowInd and assc.colInd at each iter
-            # (You might need this when you do fusion)
-
-            # to update the fusion list:
-            fusionList = assc.fusionList
-            for obstacle in fusionList:
-                print("Time: %f, State Vector:" %time)
-                print(obstacle.s_vector)
+            fusionList = assc.updateExistenceProbability()
+        
+        for obstacle in fusionList:
+            print("At Time: %f, State Vector:" %time_frame[idx+1])
+            print(obstacle.s_vector)
 
 
 if __name__ == "__main__":
