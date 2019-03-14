@@ -8,6 +8,7 @@ from objectClasses.objectClasses import fusionList as fusionListCls
 from objectAssociation import Association
 from time import perf_counter
 from helper_functions import kf_measurement_update, temporal_alignment
+import matplotlib.pyplot as plt
 
 
 def createSensorEnvs():
@@ -80,6 +81,28 @@ def main():
     # radar_rear_measurements = radar_rear.list_state[
     #     np.where(np.array(radar_rear.list_object_id) == tracked_object_id)[0]]
     print('done')
+
+
+def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
+    """
+    plot the measurements for each object and plot the predictions
+    :return:
+    """
+    working_sensor = sensors[which_sensor_idx]
+    obj_idx = [idx for idx, id in enumerate(working_sensor.list_object_id) if
+               id == which_object]
+    measured_states = [working_sensor.list_state[idx] for idx in obj_idx]
+    measured_states = np.array(measured_states).reshape(len(measured_states), 6)
+
+    predicted_states = np.array(predicted_states)
+    fig, axs = plt.subplots()
+    axs.plot(measured_states[:, 0], label='Measured X')
+    axs.plot(measured_states[:, 1], label='Measured Y')
+    axs.plot(predicted_states[:,0], label='Predicted X')
+    axs.plot(predicted_states[:,1], label='Predicted Y')
+    plt.show()
+
+    pass
 
 
 if __name__ == "__main__":
