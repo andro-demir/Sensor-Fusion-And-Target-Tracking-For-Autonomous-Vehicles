@@ -4,7 +4,7 @@ sys.path.append("..")
 import argparse
 import numpy as np
 from objectClasses.objectClasses import SimSensor
-from objectAssociation import Association
+import objectAssociation as assc
 from time import perf_counter
 
 
@@ -42,17 +42,26 @@ def main():
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, _ in enumerate(time_frame[:-1]):
-        list_object_cam_front, _ = cam_front.return_obstacle_list(time_frame[idx+1])
-        list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[idx+1])
-        list_object_radar_front, _ = radar_front.return_obstacle_list(time_frame[idx+1])
-        list_object_radar_rear, _ = radar_rear.return_obstacle_list(time_frame[idx+1])
+        list_object_cam_front, _ = cam_front.return_obstacle_list(
+                                                time_frame[idx+1])
+        list_object_cam_rear, _ = cam_rear.return_obstacle_list(
+                                              time_frame[idx+1])
+        list_object_radar_front, _ = radar_front.return_obstacle_list(
+                                                    time_frame[idx+1])
+        list_object_radar_rear, _ = radar_rear.return_obstacle_list(
+                                                  time_frame[idx+1])
         
         # Sensor data association
-        for sensorObjList in ([list_object_cam_front] + [list_object_cam_rear] +
-                              [list_object_radar_front] + [list_object_radar_rear]):
-            assc = Association(fusionList, sensorObjList)
+        for sensorObjList in ([list_object_cam_front] + 
+                              [list_object_cam_rear] +
+                              [list_object_radar_front] + 
+                              [list_object_radar_rear]):
+            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
+                                                          sensorObjList)
+            rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
             # Probability of existence of obstacles is updated:
-            fusionList = assc.updateExistenceProbability()
+            fusionList = assc.updateExistenceProbability(fusionList, 
+                            sensorObjList, mahalanobisMatrix, rowInd, colInd)
             # Veysi's part: updating the state vectors of the obstacles
             # in the fusionList:
     
