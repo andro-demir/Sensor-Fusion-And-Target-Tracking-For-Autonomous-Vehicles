@@ -41,7 +41,7 @@ class Association:
             for j in range(self.numSensorObjs):
                 # first remove None elements from the state vector:
                 self.sensorObjList[j].s_vector = remove_none(
-                                             self.sensorObjList[j].s_vector)
+                                                 self.sensorObjList[j].s_vector)
                 #print("Sensor state vector:\n", self.sensorObjList[j].s_vector)
                 # innovation covariance between 2 state estimates (3.14):
                 V = np.stack((np.asarray(self.fusionList[i].s_vector), 
