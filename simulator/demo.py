@@ -42,11 +42,11 @@ def main():
         time_frame[0])
 
     fusionList = fusionListCls(time_frame[0])
-    fusionList.extend(list_object_radar_rear)
+    fusionList.extend(list_object_radar_front)
 
     tracked_object_id = 0
     fusion_object_states = []
-
+    measured = False
     for time in time_frame:
         list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(time)
         list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
@@ -58,26 +58,32 @@ def main():
 
         # Sensor data association
         for sensor_idx, sensorObjList in enumerate(
-                [list_object_radar_rear]):
+                [list_object_radar_front]):
             for obj_idx, obj in enumerate(sensorObjList):
-                if obj_ids_radar_rear[obj_idx] == tracked_object_id:
+                if obj_ids_radar_front[obj_idx] == tracked_object_id:
                     print('Got Measurement')
+                    measured = True
                     temporal_alignment(fusionList, time)
                     kf_measurement_update(fusionList, [obj], ([0], [0]))
 
-        fusion_object_states.append(np.copy(fusionList[0].s_vector))
-        #
-        # assc = Association(fusionList, sensorObjList)
-        # assc.updateExistenceProbability()
-        # # to get the H matrix call assc.rowInd and assc.colInd at each iter
-        # # (You might need this when you do fusion)
-        #
-        # # to update the fusion list:
-        # fusionList = assc.fusionList
-        # for obstacle in fusionList:
-        #     print("Time: %f, State Vector:" %time)
-        #     print(obstacle.s_vector)
+                    fusion_object_states.append(np.copy(fusionList[0].s_vector))
+
     fusion_object_states = np.array(fusion_object_states)
+
+    # plot([radar_front], fusion_object_states, which_sensor_idx=0,
+    #      which_object=tracked_object_id)
+
+    #
+    # assc = Association(fusionList, sensorObjList)
+    # assc.updateExistenceProbability()
+    # # to get the H matrix call assc.rowInd and assc.colInd at each iter
+    # # (You might need this when you do fusion)
+    #
+    # # to update the fusion list:
+    # fusionList = assc.fusionList
+    # for obstacle in fusionList:
+    #     print("Time: %f, State Vector:" %time)
+    #     print(obstacle.s_vector)
     # radar_rear_measurements = radar_rear.list_state[
     #     np.where(np.array(radar_rear.list_object_id) == tracked_object_id)[0]]
     print('done')
@@ -94,12 +100,18 @@ def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
     measured_states = [working_sensor.list_state[idx] for idx in obj_idx]
     measured_states = np.array(measured_states).reshape(len(measured_states), 6)
 
-    predicted_states = np.array(predicted_states)
+    if len(predicted_states) < len(measured_states):
+        sys.exit('Predictions are not provided')
+
     fig, axs = plt.subplots()
-    axs.plot(measured_states[:, 0], label='Measured X')
-    axs.plot(measured_states[:, 1], label='Measured Y')
-    axs.plot(predicted_states[:,0], label='Predicted X')
-    axs.plot(predicted_states[:,1], label='Predicted Y')
+    axs.plot(measured_states[:, 0], label='Measured X', c='b', linestyle=':')
+    axs.plot(measured_states[:, 1], label='Measured Y', c='b', linestyle='-')
+    axs.plot(predicted_states[:, 0], label='Predicted X', c='r', linestyle=':')
+    axs.plot(predicted_states[:, 1], label='Predicted Y', c='r', linestyle='-')
+    axs.set_ylabel('Value')
+    axs.set_xlabel('Time')
+    plt.suptitle(working_sensor.name_sensor + ', obj ' + str(which_object))
+    plt.legend()
     plt.show()
 
     pass

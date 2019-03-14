@@ -67,6 +67,7 @@ class SimSensor(object):
         self.list_state = list(tmp['list_state'][0])
         self.list_noise = list(tmp['list_noise'][0])
         self.list_object_id = list(tmp['list_obj'][0])
+        self.name_sensor = filename.split('.')[1]
 
     def return_obstacle_list(self, time):
         """ Returns observed obstacles at a given time
