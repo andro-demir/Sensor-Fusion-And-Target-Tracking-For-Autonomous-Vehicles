@@ -6,6 +6,8 @@ import numpy as np
 from objectClasses.objectClasses import SimSensor
 import objectAssociation as assc
 from time import perf_counter
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 
 def createSensorEnvs():
@@ -36,9 +38,9 @@ def main():
     fusionList = (list_object_cam_front + list_object_cam_rear +
                   list_object_radar_front + list_object_radar_rear) 
     for obstacle in fusionList:
-            print("At Time: %f, State Vector:" %time_frame[0])
-            print(obstacle.s_vector)
-
+        print("At Time: %f, State Vector:" %time_frame[0])
+        print([x for x in obstacle.s_vector if x is not None])
+    
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, _ in enumerate(time_frame[:-1]):
@@ -52,23 +54,26 @@ def main():
                                                   time_frame[idx+1])
         
         # Sensor data association
-        for sensorObjList in ([list_object_cam_front] + 
-                              [list_object_cam_rear] +
-                              [list_object_radar_front] + 
-                              [list_object_radar_rear]):
-            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
-                                                          sensorObjList)
-            rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-            # Probability of existence of obstacles is updated:
-            fusionList = assc.updateExistenceProbability(fusionList, 
-                            sensorObjList, mahalanobisMatrix, rowInd, colInd)
-            # Veysi's part: updating the state vectors of the obstacles
-            # in the fusionList:
-    
+        sensorObjList = (list_object_cam_front + list_object_cam_rear +
+                         list_object_radar_front + list_object_radar_rear)
+        mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
+                                                      sensorObjList)
+        rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
+        # Probability of existence of obstacles is updated:
+        fusionList = assc.updateExistenceProbability(fusionList, 
+                        sensorObjList, mahalanobisMatrix, rowInd, colInd)
+        print(20 * '-')
+        print("At Time: %f" %time_frame[idx+1])
+        print("Mahalanobis matrix:\n", mahalanobisMatrix)
+        print("Row indices:\n", rowInd)
+        print("Column indices:\n", colInd)
+        print("State Vector(s):")
         for obstacle in fusionList:
-            print("At Time: %f, State Vector:" %time_frame[idx+1])
             print(obstacle.s_vector)
-
+        
+        # TODO:
+        # Veysi's part (Fusion update):
+          
 
 if __name__ == "__main__":
     start = perf_counter()

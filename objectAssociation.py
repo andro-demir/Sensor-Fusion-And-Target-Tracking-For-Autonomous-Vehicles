@@ -10,6 +10,7 @@ from scipy.spatial.distance import mahalanobis
 from scipy.optimize import linear_sum_assignment
 from scipy.linalg import inv, pinv
 from sklearn.preprocessing import normalize
+import math
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -22,27 +23,28 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
     numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
     mahalanobisMatrix = np.zeros((numSensorObjs, numFusionObjs))
-    #print(numSensorObjs, numFusionObjs)
-    #print("Mahalanobis matrix:\n", mahalanobisMatrix)
     for i in range(numFusionObjs):
         # first remove None elements from the state vector:
         fusionList[i].s_vector = remove_none(fusionList[i].s_vector)
-        #print("Fusion List state vector:\n", fusionList[i].s_vector)
         for j in range(numSensorObjs):
             # first remove None elements from the state vector:
             sensorObjList[j].s_vector = remove_none(sensorObjList[j].s_vector)
-            #print("Sensor state vector:\n", sensorObjList[j].s_vector)
             # innovation covariance between 2 state estimates (3.14):
-            V = np.stack((np.asarray(fusionList[i].s_vector), 
-                          np.asarray(sensorObjList[j].s_vector)), axis=0)
+            # using only pos_x and pos_y, otherwise  we get singular matrix.
+            diff = np.asarray(fusionList[i].s_vector[:2]) - \
+                   np.asarray(sensorObjList[j].s_vector[:2])
+            diff = diff.reshape((1,2))
+            V = np.vstack((np.asarray(fusionList[i].s_vector[:2]), 
+                           np.asarray(sensorObjList[j].s_vector[:2])))
             V = np.cov(V.T)
-            #print("covariance matrix:\n", V)
-            IV = pinv(V) 
-            #print("inverse of the covariance matrix:\n", IV)
-            mahalanobisMatrix[j,i] = mahalanobis(fusionList[i].s_vector, 
-                                                 sensorObjList[j].s_vector, IV)
-            #print("Mahalanobis matrix:\n", mahalanobisMatrix)
-            #print(40*"--")
+            # Add random noise to the covariance matrix not to 
+            # get a singular matrix
+            IV = inv(V) 
+            mahDist = np.sqrt(diff @ IV @ diff.T)
+            if math.isnan(mahDist):
+                mahalanobisMatrix[j,i] = 0
+            else: 
+                mahalanobisMatrix[j,i] = mahDist
     return mahalanobisMatrix
 
 def matchObjs(mahalanobisMatrix):
@@ -86,47 +88,31 @@ def updateExistenceProbability(fusionList, sensorObjList, mahalanobisMatrix,
     :return fusionList (list): updated global list of obstacles
     '''
     numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
-    thresh = getThreshold()
-    alpha = getAlpha()
-    beta = getBeta()
-    gamma = getGamma()
+    # TODO:
     # reduce the probability of existence if it might be a clutter, reduce
     # its probability of existence by alpha
-    for i, j in zip(rowInd, colInd):
-        if mahalanobisMatrix[i, j] > thresh:
-            fusionList[j].p_existence -= alpha
-    
-    # reduce the probability of existence of an object in the globalList 
-    # by beta if it doesn't match with any sensor objs
-    notAssignedGlobals = np.setdiff1d(colInd, 
-                                      np.arange(numFusionObjs))
-    for i in notAssignedGlobals:
-        fusionList[i].p_existence -= beta
-    
+      
+    # Update the state vectors of the obstacles in the fusionList:
+    for x, y in zip(rowInd, colInd):
+        fusionList[y].s_vector = sensorObjList[x].s_vector
+
     # initilialize a new object in the global list by assigning a 
     # probability of existence (gamma), if the sensor object doesn't match
     # any objects in the globalList
-    notAssignedSensors = np.setdiff1d(rowInd, 
-                                      np.arange(numSensorObjs))
-    for i in notAssignedSensors:
-        sensorObjList[i].p_existence = gamma  
-        fusionList.append(sensorObjList[i])  
+    if numSensorObjs > rowInd.shape[0]:
+        notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
+                                                 set(list(rowInd))) 
+        for i in notAssignedSensors:
+            sensorObjList[i].p_existence = 1.0  
+            fusionList.append(sensorObjList[i])  
 
-    return fusionList 
-
-# Assigned 0 and 1 for simplicity in the first scenario.
-def getThreshold():
-    return 0.0
-
-def getAlpha():
-    return 0.0
-
-def getBeta():
-    return 0.0
-
-def getGamma():
-    return 1.0
+    # Remove obstacles from the fusionList if its exitence prob. is 0
+    for obstacle in fusionList:
+        if obstacle.p_existence == 0:
+            fusionList.remove(obstacle)        
     
+    return fusionList 
+   
 def remove_none(l):
     return [x for x in l if x is not None]
     
