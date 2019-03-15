@@ -39,7 +39,6 @@ def main():
     time_frame = list(np.unique(np.concatenate(time_frame)))
 
     # Initialize the fusion list:
-<<<<<<< HEAD
     list_object_cam_front, _ = cam_front.return_obstacle_list(time_frame[0])
     list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[0])
     list_object_radar_front, _ = radar_front.return_obstacle_list(time_frame[0])
@@ -77,12 +76,12 @@ def main():
         print("State Vector(s):")
         for obstacle in fusionList:
             print(obstacle.s_vector)
+
         if idx == 10:
             exit(1)
         # TODO:
         # Veysi's part (Fusion update):
-          
-=======
+'''      
     list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(
         time_frame[0])
     list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
@@ -166,8 +165,7 @@ def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
     plt.show()
 
     pass
-
->>>>>>> master
+'''
 
 if __name__ == "__main__":
     start = perf_counter()
