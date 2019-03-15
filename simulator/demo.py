@@ -54,10 +54,8 @@ def main():
                                                   time_frame[idx+1])
         
         # Sensor data association
-        sensorObjList = (list_object_cam_front + list_object_cam_rear +
-                         list_object_radar_front + list_object_radar_rear)
-        mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
-                                                      sensorObjList)
+        sensorObjList = (list_object_cam_front + list_object_cam_rear + list_object_radar_front + list_object_radar_rear)
+        mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList,  sensorObjList)
         rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
         # Probability of existence of obstacles is updated:
         fusionList = assc.updateExistenceProbability(fusionList, 
@@ -70,7 +68,8 @@ def main():
         print("State Vector(s):")
         for obstacle in fusionList:
             print(obstacle.s_vector)
-        
+        if idx == 10:
+            exit(1)
         # TODO:
         # Veysi's part (Fusion update):
           
