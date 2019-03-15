@@ -92,7 +92,7 @@ class SimSensor(object):
                          a_x=None, a_y=None, a_z=None,
                          yaw=None, r_yaw=None, P=tmp_noise))
             ids_obstacle.append(self.list_object_id[idx_obj])
-        return list_obstacle, time, ids_obstacle
+        return list_obstacle, time  # , ids_obstacle
 
 
 # TODO: Sensor Class and Subclasses Require Edits...

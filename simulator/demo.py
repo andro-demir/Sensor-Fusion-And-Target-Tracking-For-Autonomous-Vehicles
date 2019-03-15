@@ -4,18 +4,13 @@ sys.path.append("..")
 import argparse
 import numpy as np
 from objectClasses.objectClasses import SimSensor
-<<<<<<< HEAD
 import objectAssociation as assc
 from time import perf_counter
 import warnings
-warnings.filterwarnings("ignore", category=RuntimeWarning)
-=======
 from objectClasses.objectClasses import fusionList as fusionListCls
-from objectAssociation import Association
 from time import perf_counter
 from helper_functions import kf_measurement_update, temporal_alignment
 import matplotlib.pyplot as plt
->>>>>>> master
 
 
 def createSensorEnvs():
