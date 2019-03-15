@@ -27,13 +27,23 @@ class Obstacle:
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
                  f=None):
         self.s_vector = asarray([pos_x, pos_y, pos_z,
-                                 v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw])
+                                 v_x, v_y, v_z, a_x, a_y, a_z, yaw, r_yaw]).astype(float)
         self.P = P
         self.dim = dim
         self.dim_uncertainty = dim_uncertainty
         self.p_existence = p_existence
         self.c = c
         self.f = f
+        self.H = np.eye(self.s_vector.shape[0])
+        # self.create_observation_matrix()
+        self.u = np.zeros(shape=(self.s_vector.shape[0],))  # zero input model
+
+    def create_observation_matrix(self):
+        H = np.eye(self.s_vector.shape[0])
+        # H[np.where(self.s_vector == None), np.where(self.s_vector == None)] = 0.
+        H[np.isnan(self.s_vector), np.isnan(self.s_vector)] = 0.
+        self.H = H
+        pass
 
 
 class SimSensor(object):
@@ -57,6 +67,7 @@ class SimSensor(object):
         self.list_state = list(tmp['list_state'][0])
         self.list_noise = list(tmp['list_noise'][0])
         self.list_object_id = list(tmp['list_obj'][0])
+        self.name_sensor = filename.split('.')[1]
 
     def return_obstacle_list(self, time):
         """ Returns observed obstacles at a given time
@@ -69,7 +80,7 @@ class SimSensor(object):
                 """
         time_idx = np.where(self.list_time == time)[0]
         list_obstacle = []
-
+        ids_obstacle = []
         for idx_obj in list(time_idx):
             tmp_state = self.list_state[idx_obj]
             tmp_noise = self.list_noise[idx_obj]
@@ -80,8 +91,8 @@ class SimSensor(object):
                          v_y=tmp_state[4][0], v_z=tmp_state[5][0], 
                          a_x=None, a_y=None, a_z=None,
                          yaw=None, r_yaw=None, P=tmp_noise))
-
-        return list_obstacle, time
+            ids_obstacle.append(self.list_object_id[idx_obj])
+        return list_obstacle, time, ids_obstacle
 
 
 # TODO: Sensor Class and Subclasses Require Edits...
