@@ -12,7 +12,6 @@ from time import perf_counter
 from helper_functions import kf_measurement_update, temporal_alignment
 import matplotlib.pyplot as plt
 
-
 def createSensorEnvs():
     '''
     Create environment sensors using Matlab file.
@@ -22,7 +21,6 @@ def createSensorEnvs():
     radar_rear = SimSensor('./radar_rear.mat')
     radar_front = SimSensor('./radar_front.mat')
     return cam_rear, cam_front, radar_rear, radar_front
-
 
 def main():
     cam_rear, cam_front, radar_rear, radar_front = createSensorEnvs()
@@ -61,24 +59,27 @@ def main():
 
             temporal_alignment(fusionList, time)
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
-
+            
             # Probability of existence of obstacles is updated:
             fusionList = assc.updateExistenceProbability(fusionList,
                                                          sensorObjList,
-                                                         mahalanobisMatrix, rowInd,
-                                                         colInd)
+                                                         rowInd, colInd)
+        
         hebele.append(fusionList[0].s_vector)
-        print(20 * '-')
+        print(50 * '**')
         print("At Time: %f" % time_frame[idx + 1])
+        print("Fusion List")
+        for obstacle in fusionList:
+            print(obstacle.s_vector)
+        print("Sensor List")
+        for obstacle in sensorObjList:
+            print(obstacle.s_vector)
         print("Mahalanobis matrix:\n", mahalanobisMatrix)
         print("Row indices:\n", rowInd)
         print("Column indices:\n", colInd)
-        print("State Vector(s):")
-        for obstacle in fusionList:
-            print(obstacle.s_vector)
 
-        # if idx == 10:
-        #     exit(1)
+        if idx == 2:
+            exit(1)
 
         fusion_hist.append([i.s_vector for i in fusionList])
 
@@ -104,7 +105,6 @@ def main():
     plot_sensor_measurements(sensor_measures)
     scatter(obj_states)
     return
-
 
 def plot_sensor_measurements(sensor_measures):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
