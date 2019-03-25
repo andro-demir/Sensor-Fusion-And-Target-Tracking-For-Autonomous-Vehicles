@@ -96,54 +96,64 @@ def main():
 
     sensor_measures = []
     for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
-        print (set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
+        print(set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
         indicies = [np.where(np.array(sensor.list_object_id) == obj_id)[0] for obj_id in
                     set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0])]
         sensor_measures.append([[sensor.list_state[i] for i in obj] for obj in indicies])
 
+    plot_sensor_measurements(sensor_measures)
+    scatter(obj_states)
     return
 
 
 def plot_sensor_measurements(sensor_measures):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
-    obj_marks = ['.', '*', 'o']
-    fig, axs = plt.subplots()
-    for sensor_idx, measurements in enumerate(sensor_measures[1:2]):
+    obj_marks = ['v', '*', 'o', 's']
+    for sensor_idx, measurements in enumerate(sensor_measures):
+        fig, axs = plt.subplots()
         for obj_idx, obj_measurements in enumerate(measurements):
-            print(obj_idx)
-
             if obj_measurements:
+                print(obj_idx)
                 obj_measurements = np.array(obj_measurements)
                 c = np.linspace(0, 1, len(obj_measurements))
                 axs.scatter(obj_measurements[:, 1, 0], obj_measurements[:, 0, 0],
-                            c=c, cmap=cmaps[sensor_idx], marker=obj_marks[obj_idx],
-                            label='Sens %d, Obj %d' % (sensor_idx, obj_idx))
+                            c=c, cmap=cmaps[obj_idx], marker=obj_marks[sensor_idx],
+                            label='Obj %d' % (obj_idx),
+                            linewidths=5)
 
-    axs.set_ylabel('Y')
-    axs.set_xlabel('X')
-    axs.set_ylim([-150, 150])
-    axs.set_xlim([-150, 150])
+        axs.set_title(
+            'Sensor Measurements, Sensor %d \n Color Gets Darker '
+            ' for New Measurements' % (
+                sensor_idx))
+        axs.set_ylabel('Y')
+        axs.set_xlabel('X')
+        axs.set_ylim([-150, 150])
+        axs.set_xlim([-150, 150])
 
-    plt.legend()
-    plt.show()
+        plt.legend()
+        plt.savefig('Sensor Measurements, Sensor%d.pdf' %(sensor_idx))
+
+        plt.show()
+
 
 def scatter(obj_states):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
     for i in range(6):
         all_states = obj_states[i]
         c = np.linspace(0, 1, len(all_states))
-        fig, axs = plt.subplots()
 
+        fig, axs = plt.subplots()
         axs.scatter(all_states[:, 1], all_states[:, 0], label='Obj', c=c, cmap=cmaps[i])
 
         axs.set_ylabel('Y')
         axs.set_xlabel('X')
         axs.set_ylim([-150, 150])
         axs.set_xlim([-150, 150])
-
+        axs.set_title('Fusion Track List, Object ID %d \n Color Gets Darker '
+            ' in Time'% (i))
         # plt.legend()
+        plt.savefig('Fusion Track List, Object ID %d.pdf'% (i))
         plt.show()
-
 
 '''
 def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
