@@ -48,15 +48,16 @@ def main():
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, time in enumerate(time_frame[:-1]):
+        sensorObjList_at_Idx = []
         for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
             list_object, _ = sensor.return_obstacle_list(time_frame[idx + 1])
-
+            sensorObjList_at_Idx.extend(list_object)
             # Sensor data association
-            sensorObjList = fusionListCls(time)
+            sensorObjList = []
             sensorObjList.extend(list_object)
-            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
+            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
+                                                          sensorObjList)
             rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-
             temporal_alignment(fusionList, time)
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
             
@@ -72,7 +73,7 @@ def main():
         for obstacle in fusionList:
             print(obstacle.s_vector)
         print("Sensor List")
-        for obstacle in sensorObjList:
+        for obstacle in sensorObjList_at_Idx:
             print(obstacle.s_vector)
         print("Mahalanobis matrix:\n", mahalanobisMatrix)
         print("Row indices:\n", rowInd)

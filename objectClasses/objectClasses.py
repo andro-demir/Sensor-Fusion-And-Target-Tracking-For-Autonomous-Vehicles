@@ -95,48 +95,6 @@ class SimSensor(object):
         return list_obstacle, time  # , ids_obstacle
 
 
-# TODO: Sensor Class and Subclasses Require Edits...
-
-class Sensor:
-    def __init__(self, timeStamp, obj_list, H_sensor_veh=None):
-        self.timeStamp = timeStamp
-        self.obj_list = obj_list
-        self.H_sensor_veh = H_sensor_veh
-        pass
-
-    def spatialAlignment(self):
-        spatial_alignment(self.obj_list,
-                          self.H_sensor_veh)  # from helper functions
-        pass
-
-
-class Radar(Sensor):
-    def __init__(self, timeStamp, obj_list, H_sensor_veh):
-        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
-
-
-class Vision(Sensor):
-    def __init__(self, timeStamp, obj_list, H_sensor_veh):
-        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
-
-
-class Lane(Sensor):
-    def __init__(self, left, right,
-                 time_stamp):  # TODO: not sure if sensor to veh transformation matrix should be incl
-        Sensor.__init__(self, time_stamp, None)
-        self.left = left
-        self.right = right
-
-
-class IMU(Sensor):
-    def __init__(self, timeStamp, obj_list, velocity, yaw_rate, H_sensor_veh):
-        Sensor.__init__(self, timeStamp, obj_list, H_sensor_veh)
-
-        # TODO: what are these? why only in IMU?
-        self.velocity = velocity
-        self.yaw_rate = yaw_rate
-
-
 class fusionList(list):
     def __init__(self, timeStamp):
         self.timeStamp = timeStamp
