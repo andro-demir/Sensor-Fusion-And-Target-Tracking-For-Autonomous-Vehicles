@@ -4,7 +4,6 @@ sys.path.append("..")
 import argparse
 import numpy as np
 from objectClasses.objectClasses import SimSensor
-from objectClasses.objectClasses import fusionList as lis
 import objectAssociation as assc
 from time import perf_counter
 import warnings
@@ -39,39 +38,36 @@ def main():
     list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[0])
     list_object_radar_front, _ = radar_front.return_obstacle_list(time_frame[0])
     list_object_radar_rear, _ = radar_rear.return_obstacle_list(time_frame[0])
-    fusionList = lis(time_frame[0])
+    fusionList = fusionListCls(time_frame[0])
+    fusion_hist = [i for i in fusionList]
     fusionList.extend(list_object_cam_front + list_object_cam_rear +
                       list_object_radar_front + list_object_radar_rear)
     for obstacle in fusionList:
         print("At Time: %f, State Vector:" % time_frame[0])
         print([x for x in obstacle.s_vector if x is not None])
 
+    hebele = []
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, time in enumerate(time_frame[:-1]):
-        list_object_cam_front, _ = cam_front.return_obstacle_list(
-            time_frame[idx + 1])
-        list_object_cam_rear, _ = cam_rear.return_obstacle_list(
-            time_frame[idx + 1])
-        list_object_radar_front, _ = radar_front.return_obstacle_list(
-            time_frame[idx + 1])
-        list_object_radar_rear, _ = radar_rear.return_obstacle_list(
-            time_frame[idx + 1])
+        for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
+            list_object, _ = sensor.return_obstacle_list(time_frame[idx + 1])
 
-        # Sensor data association
-        sensorObjList = lis(time)
-        sensorObjList.extend(
-            list_object_cam_front + list_object_cam_rear + list_object_radar_front + list_object_radar_rear)
-        mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
-        rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
+            # Sensor data association
+            sensorObjList = fusionListCls(time)
+            sensorObjList.extend(list_object)
+            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
+            rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
 
-        temporal_alignment(fusionList, time)
-        kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
+            temporal_alignment(fusionList, time)
+            kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
 
-        # Probability of existence of obstacles is updated:
-        fusionList = assc.updateExistenceProbability(fusionList,
-                        sensorObjList, mahalanobisMatrix, rowInd, colInd)
-
+            # Probability of existence of obstacles is updated:
+            fusionList = assc.updateExistenceProbability(fusionList,
+                                                         sensorObjList,
+                                                         mahalanobisMatrix, rowInd,
+                                                         colInd)
+        hebele.append(fusionList[0].s_vector)
         print(20 * '-')
         print("At Time: %f" % time_frame[idx + 1])
         print("Mahalanobis matrix:\n", mahalanobisMatrix)
@@ -83,69 +79,73 @@ def main():
 
         # if idx == 10:
         #     exit(1)
-        # TODO:
-        # Veysi's part (Fusion update):
+
+        fusion_hist.append([i.s_vector for i in fusionList])
+
+    def empty_states(r, c):
+        states = np.empty((r, c))
+        states.fill(np.nan)
+        return states
+
+    obj_states = [empty_states(len(fusion_hist), len(obstacle.s_vector)) for _ in
+                  fusionList]
+
+    for idx, s_vectors in enumerate(fusion_hist):
+        for obj_idx, s_vector in enumerate(s_vectors):
+            obj_states[obj_idx][idx] = np.copy(s_vector)
+
+    sensor_measures = []
+    for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
+        print (set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
+        indicies = [np.where(np.array(sensor.list_object_id) == obj_id)[0] for obj_id in
+                    set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0])]
+        sensor_measures.append([[sensor.list_state[i] for i in obj] for obj in indicies])
+
     return
 
 
-'''      
-    list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(
-        time_frame[0])
-    list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
-        time_frame[0])
-    list_object_radar_front, _, obj_ids_radar_front = radar_front.return_obstacle_list(
-        time_frame[0])
-    list_object_radar_rear, _, obj_ids_radar_rear = radar_rear.return_obstacle_list(
-        time_frame[0])
+def plot_sensor_measurements(sensor_measures):
+    cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
+    obj_marks = ['.', '*', 'o']
+    fig, axs = plt.subplots()
+    for sensor_idx, measurements in enumerate(sensor_measures[1:2]):
+        for obj_idx, obj_measurements in enumerate(measurements):
+            print(obj_idx)
 
-    fusionList = fusionListCls(time_frame[0])
-    fusionList.extend(list_object_radar_front)
+            if obj_measurements:
+                obj_measurements = np.array(obj_measurements)
+                c = np.linspace(0, 1, len(obj_measurements))
+                axs.scatter(obj_measurements[:, 1, 0], obj_measurements[:, 0, 0],
+                            c=c, cmap=cmaps[sensor_idx], marker=obj_marks[obj_idx],
+                            label='Sens %d, Obj %d' % (sensor_idx, obj_idx))
 
-    tracked_object_id = 0
-    fusion_object_states = []
-    measured = False
-    for time in time_frame:
-        list_object_cam_rear, _, obj_ids_cam_rear = cam_rear.return_obstacle_list(time)
-        list_object_cam_front, _, obj_ids_cam_front = cam_front.return_obstacle_list(
-            time)
-        list_object_radar_front, _, obj_ids_radar_front = radar_front.return_obstacle_list(
-            time)
-        list_object_radar_rear, _, obj_ids_radar_rear = radar_rear.return_obstacle_list(
-            time)
+    axs.set_ylabel('Y')
+    axs.set_xlabel('X')
+    axs.set_ylim([-150, 150])
+    axs.set_xlim([-150, 150])
 
-        # Sensor data association
-        for sensor_idx, sensorObjList in enumerate(
-                [list_object_radar_front]):
-            for obj_idx, obj in enumerate(sensorObjList):
-                if obj_ids_radar_front[obj_idx] == tracked_object_id:
-                    print('Got Measurement')
-                    measured = True
-                    temporal_alignment(fusionList, time)
-                    kf_measurement_update(fusionList, [obj], ([0], [0]))
+    plt.legend()
+    plt.show()
 
-                    fusion_object_states.append(np.copy(fusionList[0].s_vector))
+def scatter(obj_states):
+    cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
+    for i in range(6):
+        all_states = obj_states[i]
+        c = np.linspace(0, 1, len(all_states))
+        fig, axs = plt.subplots()
 
-    fusion_object_states = np.array(fusion_object_states)
+        axs.scatter(all_states[:, 1], all_states[:, 0], label='Obj', c=c, cmap=cmaps[i])
 
-    # plot([radar_front], fusion_object_states, which_sensor_idx=0,
-    #      which_object=tracked_object_id)
+        axs.set_ylabel('Y')
+        axs.set_xlabel('X')
+        axs.set_ylim([-150, 150])
+        axs.set_xlim([-150, 150])
 
-    #
-    # assc = Association(fusionList, sensorObjList)
-    # assc.updateExistenceProbability()
-    # # to get the H matrix call assc.rowInd and assc.colInd at each iter
-    # # (You might need this when you do fusion)
-    #
-    # # to update the fusion list:
-    # fusionList = assc.fusionList
-    # for obstacle in fusionList:
-    #     print("Time: %f, State Vector:" %time)
-    #     print(obstacle.s_vector)
-    # radar_rear_measurements = radar_rear.list_state[
-    #     np.where(np.array(radar_rear.list_object_id) == tracked_object_id)[0]]
-    print('done')
+        # plt.legend()
+        plt.show()
 
 
+'''
 def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
     """
     plot the measurements for each object and plot the predictions
