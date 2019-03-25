@@ -65,8 +65,7 @@ def matchObjs(mahalanobisMatrix):
     rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
     return rowInd, colInd
 
-def updateExistenceProbability(fusionList, sensorObjList, mahalanobisMatrix, 
-                               rowInd, colInd):
+def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     '''
     :param fusionList (list): objects in the global list. 
     :param sensorObjList (List): objects in the radar / vision sensor 
