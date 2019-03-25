@@ -92,9 +92,9 @@ def updateExistenceProbability(fusionList, sensorObjList, mahalanobisMatrix,
     # reduce the probability of existence if it might be a clutter, reduce
     # its probability of existence by alpha
       
-    # Update the state vectors of the obstacles in the fusionList:
-    for x, y in zip(rowInd, colInd):
-        fusionList[y].s_vector = sensorObjList[x].s_vector
+    # # Update the state vectors of the obstacles in the fusionList:
+    # for x, y in zip(rowInd, colInd):
+    #     fusionList[y].s_vector = sensorObjList[x].s_vector
 
     # initilialize a new object in the global list by assigning a 
     # probability of existence (gamma), if the sensor object doesn't match
@@ -114,6 +114,6 @@ def updateExistenceProbability(fusionList, sensorObjList, mahalanobisMatrix,
     return fusionList 
    
 def remove_none(l):
-    return [x for x in l if x is not None]
+    return np.array([x for x in l if x is not None])
     
 
