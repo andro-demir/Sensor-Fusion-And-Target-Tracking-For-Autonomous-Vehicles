@@ -78,8 +78,8 @@ def main():
         print("Row indices:\n", rowInd)
         print("Column indices:\n", colInd)
 
-        if idx == 2:
-            exit(1)
+        # if idx == 2:
+        #     exit(1)
 
         fusion_hist.append([i.s_vector for i in fusionList])
 
