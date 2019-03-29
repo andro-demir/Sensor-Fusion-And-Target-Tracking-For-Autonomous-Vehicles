@@ -42,9 +42,9 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
 
             w = np.zeros((8,))
             w[4:6] = np.random.normal(size=(2,))  # noise added to accelerations
-
+            accs = range(4, 6)
             Q = np.zeros((8, 8))
-            Q[4:6, 4:6] = np.multiply(np.random.normal(size=(2, 2)), np.eye(
+            Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), np.eye(
                 2))  # noise added only at the last derivatives:
             Q[-1, -1] = np.random.normal()
         else:  # z axis is included
@@ -61,7 +61,8 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
             w = np.zeros((11,))
-            w[6:9] = np.random.normal(size=(3,))  # noise added to accelerations
+            accs = range(6, 9)
+            w[accs] = np.random.normal(size=(3,))  # noise added to accelerations
 
             Q = np.zeros((11, 11))
             Q[6:9, 6:9] = np.multiply(np.random.normal(size=(3, 3)), np.eye(
@@ -69,6 +70,7 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
             Q[-1, -1] = np.random.normal()
 
         not_nan_idx = np.where(np.invert(np.isnan(obj.s_vector)))[0]
+
         s_vector_valid = obj.s_vector[not_nan_idx]
         P_valid = obj.P[not_nan_idx, :][:, not_nan_idx]
         F_valid = F[not_nan_idx, :][:, not_nan_idx]
@@ -121,7 +123,29 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         # remove the rows and columns with nans
         s_vector_s = np.copy(sensor_obj.s_vector)
         s_vector_f = np.copy(fusion_obj.s_vector)
+        P_f = np.copy(fusion_obj.P)
+        P_s = np.copy(sensor_obj.P)
         # not_nan_idx = np.where(np.invert(np.isnan(s_vector_s)))[0]
+
+        not_nan_idx_fus = set(np.where(np.invert(np.isnan(s_vector_f)))[0])
+        not_nan_idx_sens = set(np.where(np.invert(np.isnan(s_vector_s)))[0])
+
+        if s_vector_s.shape[0] == 8:
+            miss_accs_fusion = {i for i in range(4, 6) if not i in not_nan_idx_fus}
+            miss_accs_sensor = {i for i in range(4, 6) if not i in not_nan_idx_sens}
+        else:
+            miss_accs_fusion = {i for i in range(6, 9) if not i in not_nan_idx_fus}
+            miss_accs_sensor = {i for i in range(6, 9) if not i in not_nan_idx_sens}
+
+        s_vector_f[list(miss_accs_fusion)] = np.random.normal(size=len(miss_accs_fusion))
+        maxs = max(list(miss_accs_fusion))
+        mins = min(list(miss_accs_fusion))
+        P_f[mins:maxs+1, mins:maxs+1] = 1. * 1e18
+
+        s_vector_s[list(miss_accs_sensor)] = np.random.normal(size=len(miss_accs_sensor))
+        maxs = max(list(miss_accs_sensor))
+        mins = min(list(miss_accs_sensor))
+        P_s[mins:maxs+1, mins:maxs+1] = 1. * 1e18
 
         not_nan_idx_fus = set(np.where(np.invert(np.isnan(s_vector_f)))[0])
         not_nan_idx_sens = set(np.where(np.invert(np.isnan(s_vector_s)))[0])
