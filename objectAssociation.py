@@ -1,3 +1,5 @@
+# objectAssociation.py
+
 '''
 ****************************************************************
 Contributors to this code
@@ -6,11 +8,13 @@ Contributors to this code
 '''
 
 import numpy as np
-from scipy.spatial.distance import mahalanobis
+import math
+import scipy
 from scipy.optimize import linear_sum_assignment
 from scipy.linalg import inv, pinv
+from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
-import math
+from random import uniform
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -19,7 +23,7 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
                                  measurements.
     the statistical distance (Mahalanobis distance) between state vectors 
     from a fusion object and a sensor object is evaluated. 
-    mahalanobisMatrix: The cost matrix of the bipartite graph.
+    mahalanobisMatrix (ndarray): The cost matrix of the bipartite graph.
     '''
     numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
     mahalanobisMatrix = np.zeros((numSensorObjs, numFusionObjs))
@@ -37,14 +41,17 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             V = np.vstack((np.asarray(fusionList[i].s_vector[:2]), 
                            np.asarray(sensorObjList[j].s_vector[:2])))
             V = np.cov(V.T)
-            # Add random noise to the covariance matrix not to 
-            # get a singular matrix
-            IV = inv(V) 
-            mahDist = np.sqrt(diff @ IV @ diff.T)
+            try:
+                IV = inv(V)
+                mahDist = np.sqrt(diff @ IV @ diff.T)
+            except: #LinAlgError raises due to singular array in some cases
+                mahDist = uniform(0,1)
+            
             if math.isnan(mahDist):
                 mahalanobisMatrix[j,i] = 0
             else: 
                 mahalanobisMatrix[j,i] = mahDist
+    
     return mahalanobisMatrix
 
 def matchObjs(mahalanobisMatrix):
@@ -98,18 +105,13 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     # initilialize a new object in the global list by assigning a 
     # probability of existence (gamma), if the sensor object doesn't match
     # any objects in the globalList
-    if numSensorObjs > rowInd.shape[0]:
+    if numSensorObjs >= rowInd.shape[0]:
         notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
                                                  set(list(rowInd))) 
         for i in notAssignedSensors:
             sensorObjList[i].p_existence = 1.0  
             fusionList.append(sensorObjList[i])  
 
-    # Remove obstacles from the fusionList if its exitence prob. is 0
-    for obstacle in fusionList:
-        if obstacle.p_existence == 0:
-            fusionList.remove(obstacle)        
-    
     return fusionList 
    
 def remove_none(l):

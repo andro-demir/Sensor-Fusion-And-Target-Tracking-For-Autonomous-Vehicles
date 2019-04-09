@@ -1,3 +1,4 @@
+#demo.py
 import sys
 
 sys.path.append("..")
@@ -44,44 +45,48 @@ def main():
         print("At Time: %f, State Vector:" % time_frame[0])
         print([x for x in obstacle.s_vector if x is not None])
 
-    hebele = []
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, time in enumerate(time_frame[:-1]):
-        for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
-            list_object, _ = sensor.return_obstacle_list(time_frame[idx + 1])
-
+        sensor_idx = 0
+        sensorObjList_at_Idx = [] # sensor obj list at time idx
+        for detection in [cam_front, cam_rear, radar_front, radar_rear]:
+            list_object, _ = detection.return_obstacle_list(time_frame[idx + 1])
+            sensorObjList_at_Idx.extend(list_object)
             # Sensor data association
-            sensorObjList = fusionListCls(time)
+            sensorObjList = [] # sensor obj list at time idx for sensor_idx
             sensorObjList.extend(list_object)
-            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
-            rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-
             temporal_alignment(fusionList, time)
+            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
+                                                          sensorObjList)
+            rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
+            print(50 * '**')
+            print("At Time: %f and Sensor Idx: %i" %(time_frame[idx+1], 
+                                                          sensor_idx))
+            
+            print("Fusion List")
+            for obstacle in fusionList:
+                print(obstacle.s_vector)
+            
+            print("Sensor List")
+            for obstacle in sensorObjList:
+                print(obstacle.s_vector)
+            
+            print("Mahalanobis matrix:\n", mahalanobisMatrix)
+            print("Row indices:\n", rowInd)
+            print("Column indices:\n", colInd)
+
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
             
             # Probability of existence of obstacles is updated:
             fusionList = assc.updateExistenceProbability(fusionList,
                                                          sensorObjList,
                                                          rowInd, colInd)
-        
-        hebele.append(fusionList[0].s_vector)
-        print(50 * '**')
-        print("At Time: %f" % time_frame[idx + 1])
-        print("Fusion List")
-        for obstacle in fusionList:
-            print(obstacle.s_vector)
-        print("Sensor List")
-        for obstacle in sensorObjList:
-            print(obstacle.s_vector)
-        print("Mahalanobis matrix:\n", mahalanobisMatrix)
-        print("Row indices:\n", rowInd)
-        print("Column indices:\n", colInd)
-
-        # if idx == 2:
-        #     exit(1)
+            sensor_idx += 1
 
         fusion_hist.append([i.s_vector for i in fusionList])
+        #if idx == 3:
+        #    exit(1)
 
     def empty_states(r, c):
         states = np.empty((r, c))
@@ -97,63 +102,53 @@ def main():
 
     sensor_measures = []
     for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
-        print(set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
+        print (set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
         indicies = [np.where(np.array(sensor.list_object_id) == obj_id)[0] for obj_id in
                     set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0])]
         sensor_measures.append([[sensor.list_state[i] for i in obj] for obj in indicies])
 
-    plot_sensor_measurements(sensor_measures)
-    scatter(obj_states)
     return
 
 def plot_sensor_measurements(sensor_measures):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
-    obj_marks = ['v', '*', 'o', 's']
-    for sensor_idx, measurements in enumerate(sensor_measures):
-        fig, axs = plt.subplots()
+    obj_marks = ['.', '*', 'o']
+    fig, axs = plt.subplots()
+    for sensor_idx, measurements in enumerate(sensor_measures[1:2]):
         for obj_idx, obj_measurements in enumerate(measurements):
+            print(obj_idx)
+
             if obj_measurements:
-                print(obj_idx)
                 obj_measurements = np.array(obj_measurements)
                 c = np.linspace(0, 1, len(obj_measurements))
                 axs.scatter(obj_measurements[:, 1, 0], obj_measurements[:, 0, 0],
-                            c=c, cmap=cmaps[obj_idx], marker=obj_marks[sensor_idx],
-                            label='Obj %d' % (obj_idx),
-                            linewidths=5)
+                            c=c, cmap=cmaps[sensor_idx], marker=obj_marks[obj_idx],
+                            label='Sens %d, Obj %d' % (sensor_idx, obj_idx))
 
-        axs.set_title(
-            'Sensor Measurements, Sensor %d \n Color Gets Darker '
-            ' for New Measurements' % (
-                sensor_idx))
-        axs.set_ylabel('Y')
-        axs.set_xlabel('X')
-        axs.set_ylim([-150, 150])
-        axs.set_xlim([-150, 150])
+    axs.set_ylabel('Y')
+    axs.set_xlabel('X')
+    axs.set_ylim([-150, 150])
+    axs.set_xlim([-150, 150])
 
-        plt.legend()
-        plt.savefig('Sensor Measurements, Sensor%d.pdf' %(sensor_idx))
-
-        plt.show()
-
+    plt.legend()
+    plt.show()
 
 def scatter(obj_states):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
     for i in range(6):
         all_states = obj_states[i]
         c = np.linspace(0, 1, len(all_states))
-
         fig, axs = plt.subplots()
+
         axs.scatter(all_states[:, 1], all_states[:, 0], label='Obj', c=c, cmap=cmaps[i])
 
         axs.set_ylabel('Y')
         axs.set_xlabel('X')
         axs.set_ylim([-150, 150])
         axs.set_xlim([-150, 150])
-        axs.set_title('Fusion Track List, Object ID %d \n Color Gets Darker '
-            ' in Time'% (i))
+
         # plt.legend()
-        plt.savefig('Fusion Track List, Object ID %d.pdf'% (i))
         plt.show()
+
 
 '''
 def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
