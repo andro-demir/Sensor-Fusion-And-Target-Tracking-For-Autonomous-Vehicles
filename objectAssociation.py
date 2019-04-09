@@ -37,8 +37,8 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             try:
                 IV = inv(V)
                 mahDist = np.sqrt(diff @ IV @ diff.T)
-            except: #LinAlgError raises due to singular array in some cases
-                mahDist = uniform(0, 0.2)
+            except: # TODO: LinAlgError raises due to singular array in some cases
+                mahDist = uniform(0, 0.2) 
             
             if math.isnan(mahDist):
                 mahalanobisMatrix[j,i] = 0
