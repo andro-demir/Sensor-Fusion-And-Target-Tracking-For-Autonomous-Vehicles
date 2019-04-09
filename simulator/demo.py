@@ -1,3 +1,4 @@
+#demo.py
 import sys
 
 sys.path.append("..")
@@ -44,45 +45,48 @@ def main():
         print("At Time: %f, State Vector:" % time_frame[0])
         print([x for x in obstacle.s_vector if x is not None])
 
-    hebele = []
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     for idx, time in enumerate(time_frame[:-1]):
-        sensorObjList_at_Idx = []
-        for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
-            list_object, _ = sensor.return_obstacle_list(time_frame[idx + 1])
+        sensor_idx = 0
+        sensorObjList_at_Idx = [] # sensor obj list at time idx
+        for detection in [cam_front, cam_rear, radar_front, radar_rear]:
+            list_object, _ = detection.return_obstacle_list(time_frame[idx + 1])
             sensorObjList_at_Idx.extend(list_object)
             # Sensor data association
-            sensorObjList = []
+            sensorObjList = [] # sensor obj list at time idx for sensor_idx
             sensorObjList.extend(list_object)
+            temporal_alignment(fusionList, time)
             mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
                                                           sensorObjList)
             rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-            temporal_alignment(fusionList, time)
+            print(50 * '**')
+            print("At Time: %f and Sensor Idx: %i" %(time_frame[idx+1], 
+                                                          sensor_idx))
+            
+            print("Fusion List")
+            for obstacle in fusionList:
+                print(obstacle.s_vector)
+            
+            print("Sensor List")
+            for obstacle in sensorObjList:
+                print(obstacle.s_vector)
+            
+            print("Mahalanobis matrix:\n", mahalanobisMatrix)
+            print("Row indices:\n", rowInd)
+            print("Column indices:\n", colInd)
+
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
             
             # Probability of existence of obstacles is updated:
             fusionList = assc.updateExistenceProbability(fusionList,
                                                          sensorObjList,
                                                          rowInd, colInd)
-        
-        hebele.append(fusionList[0].s_vector)
-        print(50 * '**')
-        print("At Time: %f" % time_frame[idx + 1])
-        print("Fusion List")
-        for obstacle in fusionList:
-            print(obstacle.s_vector)
-        print("Sensor List")
-        for obstacle in sensorObjList_at_Idx:
-            print(obstacle.s_vector)
-        print("Mahalanobis matrix:\n", mahalanobisMatrix)
-        print("Row indices:\n", rowInd)
-        print("Column indices:\n", colInd)
-
-        if idx == 2:
-            exit(1)
+            sensor_idx += 1
 
         fusion_hist.append([i.s_vector for i in fusionList])
+        #if idx == 3:
+        #    exit(1)
 
     def empty_states(r, c):
         states = np.empty((r, c))
