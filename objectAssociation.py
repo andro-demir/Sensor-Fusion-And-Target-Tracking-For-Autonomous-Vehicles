@@ -1,12 +1,5 @@
 # objectAssociation.py
 
-'''
-****************************************************************
-Contributors to this code
-** Andac Demir (andacdemir@gmail.com) (main developer)
-****************************************************************
-'''
-
 import numpy as np
 import math
 import scipy
