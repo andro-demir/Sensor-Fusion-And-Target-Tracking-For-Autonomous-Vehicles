@@ -85,13 +85,15 @@ class SimSensor(object):
         for idx_obj in list(time_idx):
             tmp_state = self.list_state[idx_obj]
             tmp_noise = self.list_noise[idx_obj]
-            
+            P = np.empty((11, 11))
+            P[:] = None
+            P[:6, :6] = tmp_noise
             list_obstacle.append(
                 Obstacle(pos_x=tmp_state[0][0], pos_y=tmp_state[1][0],
-                         pos_z=tmp_state[2][0], v_x=tmp_state[3][0], 
-                         v_y=tmp_state[4][0], v_z=tmp_state[5][0], 
+                         pos_z=tmp_state[2][0], v_x=tmp_state[3][0],
+                         v_y=tmp_state[4][0], v_z=tmp_state[5][0],
                          a_x=None, a_y=None, a_z=None,
-                         yaw=None, r_yaw=None, P=tmp_noise))
+                         yaw=None, r_yaw=None, P=P))
             ids_obstacle.append(self.list_object_id[idx_obj])
         return list_obstacle, time  # , ids_obstacle
 

@@ -11,3 +11,6 @@ objectClasses/.DS_Store
 objectClasses/__pycache__/__init__.cpython-36.pyc
 objectClasses/__pycache__/__init__.cpython-36.pyc
 *.pyc
+simulator/demo.py
+*.pdf
+*.pyc

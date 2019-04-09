@@ -42,9 +42,9 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
 
             w = np.zeros((8,))
             w[4:6] = np.random.normal(size=(2,))  # noise added to accelerations
-
+            accs = range(4, 6)
             Q = np.zeros((8, 8))
-            Q[4:6, 4:6] = np.multiply(np.random.normal(size=(2, 2)), np.eye(
+            Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), np.eye(
                 2))  # noise added only at the last derivatives:
             Q[-1, -1] = np.random.normal()
         else:  # z axis is included
@@ -61,7 +61,8 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
             w = np.zeros((11,))
-            w[6:9] = np.random.normal(size=(3,))  # noise added to accelerations
+            accs = range(6, 9)
+            w[accs] = np.random.normal(size=(3,))  # noise added to accelerations
 
             Q = np.zeros((11, 11))
             Q[6:9, 6:9] = np.multiply(np.random.normal(size=(3, 3)), np.eye(
@@ -69,6 +70,7 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
             Q[-1, -1] = np.random.normal()
 
         not_nan_idx = np.where(np.invert(np.isnan(obj.s_vector)))[0]
+
         s_vector_valid = obj.s_vector[not_nan_idx]
         P_valid = obj.P[not_nan_idx, :][:, not_nan_idx]
         F_valid = F[not_nan_idx, :][:, not_nan_idx]
@@ -121,7 +123,41 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         # remove the rows and columns with nans
         s_vector_s = np.copy(sensor_obj.s_vector)
         s_vector_f = np.copy(fusion_obj.s_vector)
+        P_f = np.copy(fusion_obj.P)
+        P_s = np.copy(sensor_obj.P)
         # not_nan_idx = np.where(np.invert(np.isnan(s_vector_s)))[0]
+
+        not_nan_idx_fus = set(np.where(np.invert(np.isnan(s_vector_f)))[0])
+        not_nan_idx_sens = set(np.where(np.invert(np.isnan(s_vector_s)))[0])
+
+        if s_vector_s.shape[0] == 8:
+            miss_accs_fusion = {i for i in range(4, 6) if not i in not_nan_idx_fus}
+            miss_accs_sensor = {i for i in range(4, 6) if not i in not_nan_idx_sens}
+        else:
+            miss_accs_fusion = {i for i in range(6, 9) if not i in not_nan_idx_fus}
+            miss_accs_sensor = {i for i in range(6, 9) if not i in not_nan_idx_sens}
+
+        if miss_accs_fusion:  # for the missing accelerations, initialize with random
+            # numbers but give huge uncertanity for them
+            s_vector_f[list(miss_accs_fusion)] = 0.001 * np.random.normal(
+                size=len(miss_accs_fusion))
+            maxs = max(list(miss_accs_fusion))
+            mins = min(list(miss_accs_fusion))
+            P_f[mins:maxs + 1, :maxs + 1] = 0.
+            P_f[:maxs + 1, mins:maxs + 1] = 0.
+            P_f[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs-mins+1)
+        if miss_accs_sensor:  # if sensor is missing accs, use the last estimate of the
+            #state as measuremnt with huge uncertanity around it
+            maxs = max(list(miss_accs_sensor))
+            mins = min(list(miss_accs_sensor))
+            P_s[mins:maxs + 1, :maxs + 1] = 0.
+            P_s[:maxs + 1, mins:maxs + 1] = 0.
+            P_s[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs-mins+1)
+            if miss_accs_fusion:
+                s_vector_s[list(miss_accs_sensor)] = 0.001 * np.random.normal(
+                    size=len(miss_accs_sensor))
+            else:
+                s_vector_s[list(miss_accs_sensor)] = s_vector_f[list(miss_accs_sensor)]
 
         not_nan_idx_fus = set(np.where(np.invert(np.isnan(s_vector_f)))[0])
         not_nan_idx_sens = set(np.where(np.invert(np.isnan(s_vector_s)))[0])
@@ -135,14 +171,13 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         s_vector_s = s_vector_s[not_nan_idx]
         s_vector_f = s_vector_f[not_nan_idx]
 
-        P_f = np.copy(fusion_obj.P)[not_nan_idx, :][:, not_nan_idx]
-        P_s = np.copy(sensor_obj.P)[not_nan_idx, :][:, not_nan_idx]
+        P_f = np.copy(P_f)[not_nan_idx, :][:, not_nan_idx]
+        P_s = np.copy(P_s)[not_nan_idx, :][:, not_nan_idx]
         H = sensor_obj.H[not_nan_idx, :][:, not_nan_idx]
 
         # kalman filter equations:
         # P_s is the cov of the obs noise
         S = np.dot(np.dot(H, P_f), H.T) + P_s
-
         # K is the kalman gain
         K = np.dot(np.dot(P_f, H.T), np.linalg.inv(S))
         # Updated aposteriori state estimate
@@ -151,7 +186,7 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         P = np.dot(np.eye(s_vector_f.shape[0]) - np.dot(K, H), P_f)
 
         # update global object state and covariance
-        fusion_obj.P[not_nan_idx, :][:, not_nan_idx] = P
+        fusion_obj.P[not_nan_idx[:, np.newaxis], not_nan_idx] = P
 
         fusion_obj.s_vector[not_nan_idx] = x
 
@@ -159,10 +194,10 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         if first_time_measurement_idx:
             fusion_obj.s_vector[first_time_measurement_idx] = sensor_obj.s_vector[
                 first_time_measurement_idx]
-            fusion_obj.P[first_time_measurement_idx, :][:,
-            first_time_measurement_idx] = sensor_obj.P[first_time_measurement_idx, :][:,
-                                          first_time_measurement_idx]
-
+            fusion_obj.P[
+                first_time_measurement_idx[:, np.newaxis], first_time_measurement_idx] = \
+            sensor_obj.P[
+                first_time_measurement_idx[:, np.newaxis], first_time_measurement_idx]
     pass
 
 
