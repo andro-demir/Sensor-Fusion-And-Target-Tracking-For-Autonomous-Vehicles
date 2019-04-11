@@ -49,39 +49,38 @@ def main():
     # Get the sensorObjectList at time+1
     for idx, time in enumerate(time_frame[:-1]):
         sensor_idx = 0
-        sensorObjList_at_Idx = [] # sensor obj list at time idx
         for detection in [cam_front, cam_rear, radar_front, radar_rear]:
             list_object, _ = detection.return_obstacle_list(time_frame[idx + 1])
-            sensorObjList_at_Idx.extend(list_object)
             # Sensor data association
-            sensorObjList = [] # sensor obj list at time idx for sensor_idx
+            sensorObjList = fusionListCls(time)  # sensor obj list at time idx for sensor_idx
             sensorObjList.extend(list_object)
             temporal_alignment(fusionList, time)
-            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
+            mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList,
                                                           sensorObjList)
             rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
             print(50 * '**')
-            print("At Time: %f and Sensor Idx: %i" %(time_frame[idx+1], 
+            print("At Time: %f and Sensor Idx: %i" %(time_frame[idx+1],
                                                           sensor_idx))
-            
+
             print("Fusion List")
             for obstacle in fusionList:
                 print(obstacle.s_vector)
-            
+
             print("Sensor List")
             for obstacle in sensorObjList:
                 print(obstacle.s_vector)
-            
+
             print("Mahalanobis matrix:\n", mahalanobisMatrix)
             print("Row indices:\n", rowInd)
             print("Column indices:\n", colInd)
 
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
-            
+
             # Probability of existence of obstacles is updated:
             fusionList = assc.updateExistenceProbability(fusionList,
                                                          sensorObjList,
                                                          rowInd, colInd)
+
             sensor_idx += 1
 
         fusion_hist.append([i.s_vector for i in fusionList])
