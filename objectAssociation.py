@@ -39,9 +39,7 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             IV = inv(V)
             mahDist = np.sqrt((x-y) @ IV @ (x-y).T)
             mahalanobisMatrix[j,i] = mahDist
-    
     return mahalanobisMatrix
-
 
 def matchObjs(mahalanobisMatrix):
     '''
