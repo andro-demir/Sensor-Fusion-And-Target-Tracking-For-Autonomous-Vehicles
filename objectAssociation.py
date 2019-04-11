@@ -8,6 +8,8 @@ from scipy.linalg import inv, pinv
 from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
 from random import uniform
+from helper_functions import initialize_fusion_objects, drop_objects
+from objectClasses.objectClasses import fusionList as fusionListCls
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -24,6 +26,7 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
     mahalanobisMatrix = np.zeros((numSensorObjs, numFusionObjs))
     for i in range(numFusionObjs):
         for j in range(numSensorObjs):
+<<<<<<< HEAD
             x = np.concatenate((fusionList[i].s_vector[:2].reshape((1,2)),
                                 fusionList[i].s_vector[3:5].reshape((1,2))),
                                 axis=1) 
@@ -38,7 +41,31 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             mahDist = np.sqrt((x-y) @ IV @ (x-y).T)
             mahalanobisMatrix[j,i] = mahDist
     
+=======
+            # first remove None elements from the state vector:
+            sensorObjList[j].s_vector = remove_none(sensorObjList[j].s_vector)
+            # innovation covariance between 2 state estimates (3.14):
+            # using only pos_x and pos_y, otherwise  we get singular matrix.
+            diff = np.asarray(fusionList[i].s_vector[:2]) - \
+                   np.asarray(sensorObjList[j].s_vector[:2])
+            diff = diff.reshape((1, 2))
+            V = np.vstack((np.asarray(fusionList[i].s_vector[:2]),
+                           np.asarray(sensorObjList[j].s_vector[:2])))
+            V = np.cov(V.T)
+            try:
+                IV = inv(V)
+                mahDist = np.sqrt(diff @ IV @ diff.T)
+            except:  # TODO: LinAlgError raises due to singular array in some cases
+                mahDist = uniform(0, 0.2)
+
+            if math.isnan(mahDist):
+                mahalanobisMatrix[j, i] = 0
+            else:
+                mahalanobisMatrix[j, i] = mahDist
+
+>>>>>>> 88c11dbeaa29471e554cfe69a2cd55fac894c9d0
     return mahalanobisMatrix
+
 
 def matchObjs(mahalanobisMatrix):
     '''
@@ -57,6 +84,7 @@ def matchObjs(mahalanobisMatrix):
     '''
     rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
     return rowInd, colInd
+
 
 def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     '''
@@ -83,7 +111,7 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     # TODO:
     # reduce the probability of existence if it might be a clutter, reduce
     # its probability of existence by alpha
-      
+
     # # Update the state vectors of the obstacles in the fusionList:
     # for x, y in zip(rowInd, colInd):
     #     fusionList[y].s_vector = sensorObjList[x].s_vector
@@ -91,6 +119,7 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     # initilialize a new object in the global list by assigning a 
     # probability of existence (gamma), if the sensor object doesn't match
     # any objects in the globalList
+<<<<<<< HEAD
     if numSensorObjs >= rowInd.shape[0]:
         notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
                                                  set(list(rowInd))) 
@@ -100,5 +129,28 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
 
     return fusionList 
    
-    
+=======
 
+    # if numSensorObjs >= rowInd.shape[0]:
+    #     notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
+    #                                              set(list(rowInd)))
+    #     for i in notAssignedSensors:
+    #         sensorObjList[i].p_existence = 1.0
+    #         fusionList.append(sensorObjList[i])
+
+    # new initialization function
+    notAssignedSensor_objects = fusionListCls(sensorObjList.timeStamp)
+    notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
+                                      idx not in rowInd])
+
+    fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
+
+    #  drop the obj from the fusion list
+    fusionList = drop_objects(fusionList)
+>>>>>>> 88c11dbeaa29471e554cfe69a2cd55fac894c9d0
+    
+    return fusionList
+
+
+def remove_none(l):
+    return np.array([x for x in l if x is not None])

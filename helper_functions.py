@@ -1,4 +1,5 @@
 import numpy as np
+from objectClasses.objectClasses import fusionList as fusionListCls
 
 
 def spatial_alignment(obj_list, H_sensor_veh):
@@ -145,14 +146,14 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
             mins = min(list(miss_accs_fusion))
             P_f[mins:maxs + 1, :maxs + 1] = 0.
             P_f[:maxs + 1, mins:maxs + 1] = 0.
-            P_f[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs-mins+1)
+            P_f[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs - mins + 1)
         if miss_accs_sensor:  # if sensor is missing accs, use the last estimate of the
-            #state as measuremnt with huge uncertanity around it
+            # state as measuremnt with huge uncertanity around it
             maxs = max(list(miss_accs_sensor))
             mins = min(list(miss_accs_sensor))
             P_s[mins:maxs + 1, :maxs + 1] = 0.
             P_s[:maxs + 1, mins:maxs + 1] = 0.
-            P_s[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs-mins+1)
+            P_s[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs - mins + 1)
             if miss_accs_fusion:
                 s_vector_s[list(miss_accs_sensor)] = 0.001 * np.random.normal(
                     size=len(miss_accs_sensor))
@@ -190,15 +191,83 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
 
         fusion_obj.s_vector[not_nan_idx] = x
 
+        # update the last update time of the fusion object
+        fusion_obj.last_update_time = sensor_list.timeStamp
+
         # if there is any new measurements write them to fusion state
         if first_time_measurement_idx:
             fusion_obj.s_vector[first_time_measurement_idx] = sensor_obj.s_vector[
                 first_time_measurement_idx]
             fusion_obj.P[
                 first_time_measurement_idx[:, np.newaxis], first_time_measurement_idx] = \
-            sensor_obj.P[
-                first_time_measurement_idx[:, np.newaxis], first_time_measurement_idx]
+                sensor_obj.P[
+                    first_time_measurement_idx[:,
+                    np.newaxis], first_time_measurement_idx]
     pass
+
+
+def initialize_fusion_objects(not_assigned_sensor_obj_list):
+    """
+    :param not_assigned_sensor_obj_list: list of not assigned objects from the sensors
+    :return: fusion_list_initialized_objects:
+    """
+    sensor_specs = not_assigned_sensor_obj_list.sensor_specs
+    time = not_assigned_sensor_obj_list.timeStamp
+    new_fusion_elements = []
+    for sensor_obj in not_assigned_sensor_obj_list:
+        s_vector = sensor_obj.s_vector
+        P = sensor_obj.P
+        if not all(s_vector[:3] == s_vector[:3]):  # some missing position measurements
+            pos_initializers = sensor_specs['pos_initializers']
+            pos_nans = np.where(np.isnan(s_vector[:3]))[0]
+            for i in pos_nans:
+                s_vector[:3][i] = np.random.normal(loc=pos_initializers[i],
+                                                   scale=pos_initializers[i] / 10.)
+                P[i, :] = 0.
+                P[:, i] = 0.
+                P[i, i] = 1e18
+        if not all(s_vector[3:6] == s_vector[3:6]):  # some missing velocity measurements
+            vel_initializers = sensor_specs['vel_initializers']
+            vel_nans = np.where(np.isnan(s_vector[3:6]))[0]
+            for i in vel_nans:
+                s_vector[3:6][i] = np.random.normal(loc=vel_initializers[i],
+                                                    scale=vel_initializers[i] / 10.)
+                P[i, :] = 0.
+                P[:, i] = 0.
+                P[i, i] = 1e18
+
+        if not all(s_vector[6:9] == s_vector[6:9]):  # some missing acc measurements
+            acc_nans = np.where(np.isnan(s_vector[6:9]))[0]
+            s_vector[6:9][acc_nans] = np.random.normal(size=(len(acc_nans)))
+            P[i, :] = 0.
+            P[:, i] = 0.
+            P[i, i] = 1e18
+
+        new_fusion_elements.append(Obstacle(pos_x=s_vector[0], pos_y=s_vector[1],
+                                            pos_z=s_vector[2], v_x=s_vector[3],
+                                            v_y=s_vector[4], v_z=s_vector[5],
+                                            a_x=s_vector[6], a_y=s_vector[7],
+                                            a_z=s_vector[8],
+                                            yaw=s_vector[9], r_yaw=s_vector[10], P=P,
+                                            last_update_time=time, p_existence=1))
+    return new_fusion_elements
+
+
+def drop_objects(fusion_list):
+    """
+
+    :param fusion_list:
+    :return:
+    """
+    fusion_time = fusion_list.timeStamp
+    for fusion_obj in fusion_list:
+        last_update = fusion_obj.last_update_time
+        distance_to_ego = np.linalg.norm(fusion_obj.s_vector[:3])
+        if fusion_time - last_update > 1. and distance_to_ego > 100:  # no updates in
+            #  last sec and the car is more than 100m away
+            fusion_list.remove(fusion_obj)
+
+    return fusion_list
 
 
 debug = False
