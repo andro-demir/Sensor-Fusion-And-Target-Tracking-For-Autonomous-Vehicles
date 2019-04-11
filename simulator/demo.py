@@ -52,29 +52,29 @@ def main():
         for detection in [cam_front, cam_rear, radar_front, radar_rear]:
             list_object, _ = detection.return_obstacle_list(time)
             # Sensor data association
-            sensorObjList = fusionListCls(time, sensor_specs=detection.sensor_specs)  # sensor obj list at time idx for sensor_idx
+            # sensor obj list at time idx for sensor_idx
+            sensorObjList = fusionListCls(time, sensor_specs=detection.sensor_specs)  
             sensorObjList.extend(list_object)
             temporal_alignment(fusionList, time)
             mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList,
                                                           sensorObjList)
             rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-            # print(50 * '**')
-            # print("At Time: %f and Sensor Idx: %i" %(time,
-            #                                               sensor_idx))
+            print(50 * '**')
+            print("At Time: %f and Sensor Idx: %i" %(time, sensor_idx))
+            
+            print("Fusion List")
+            for obstacle in fusionList:
+                print(obstacle.s_vector)
             #
-            # print("Fusion List")
-            # for obstacle in fusionList:
-            #     print(obstacle.s_vector)
+            print("Sensor List")
+            for obstacle in sensorObjList:
+                print(obstacle.s_vector)
             #
-            # print("Sensor List")
-            # for obstacle in sensorObjList:
-            #     print(obstacle.s_vector)
-            #
-            # print("Mahalanobis matrix:\n", mahalanobisMatrix)
-            # print("Row indices:\n", rowInd)
-            # print("Column indices:\n", colInd)
-            # if idx == 1:
-            #     print('sf')
+            print("Mahalanobis matrix:\n", mahalanobisMatrix)
+            print("Row indices:\n", rowInd)
+            print("Column indices:\n", colInd)
+            if idx == 1:
+                print('sf')
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
 
             # Probability of existence of obstacles is updated:
@@ -92,7 +92,7 @@ def main():
         states = np.empty((r, c))
         states.fill(np.nan)
         return states
-
+'''
     obj_states = [empty_states(len(fusion_hist), len(obstacle.s_vector)) for _ in
                   fusionList]
 
@@ -110,7 +110,7 @@ def main():
     plot_sensor_measurements(sensor_measures)
     scatter(obj_states)
     return
-
+'''
 def plot_sensor_measurements(sensor_measures):
     cmaps = ['Reds', 'Blues', 'Greys', 'Purples', 'Oranges', 'Greens']
     obj_marks = ['.', '*', 'o']
