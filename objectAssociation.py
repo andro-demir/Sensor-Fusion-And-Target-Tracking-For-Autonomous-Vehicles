@@ -9,6 +9,7 @@ from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
 from random import uniform
 from helper_functions import initialize_fusion_objects, drop_objects
+from objectClasses.objectClasses import fusionList as fusionListCls
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -93,15 +94,22 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     # probability of existence (gamma), if the sensor object doesn't match
     # any objects in the globalList
 
-    if numSensorObjs >= rowInd.shape[0]:
-        notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
-                                                 set(list(rowInd)))
-        for i in notAssignedSensors:
-            sensorObjList[i].p_existence = 1.0
-            fusionList.append(sensorObjList[i])
+    # if numSensorObjs >= rowInd.shape[0]:
+    #     notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
+    #                                              set(list(rowInd)))
+    #     for i in notAssignedSensors:
+    #         sensorObjList[i].p_existence = 1.0
+    #         fusionList.append(sensorObjList[i])
+
+    # new initialization function
+    notAssignedSensor_objects = fusionListCls(sensorObjList.timeStamp)
+    notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
+                                      idx not in rowInd])
+
+    fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
 
     #  drop the obj from the fusion list
-    #fusionList = drop_objects(fusionList)
+    fusionList = drop_objects(fusionList)
     
     return fusionList
 
