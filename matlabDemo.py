@@ -5,7 +5,6 @@ from objectClasses.objectClasses import fusionList as fusionListCls
 import objectAssociation as assc
 from helper_functions import kf_measurement_update, temporal_alignment
 
-
 def matExec(time, Measurements, States):
     '''
         param: time (float)
@@ -17,26 +16,27 @@ def matExec(time, Measurements, States):
     '''
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
+    # Note: In Eatron's code Measurements = [pos_x, v_x, pos_y, v_y]'
     sensorObjList = []
-    tmp_noise = np.array([[22.1,0,0,0,0,0], [0,2209,0,0,0,0], [0,0,1,0,0,0],
-                          [0,0,0,22.1,0,0], [0,0,0,0,2209,0], [0,0,0,0,0,1]])
+    measurementNoise = np.array([[22.1,0,0,0,0,0], [0,22.1,0,0,0,0], 
+                                 [0,0,1,0,0,0], [0,0,0,2209,0,0], 
+                                 [0,0,0,0,2209,0], [0,0,0,0,0,1]])
     for measurement in Measurements.T:
         sensorObjList.append(Obstacle(pos_x=measurement[0], 
-                                      pos_y=measurement[1],
-                                      pos_z=None, v_x=measurement[2], 
+                                      pos_y=measurement[2],
+                                      pos_z=None, v_x=measurement[1], 
                                       v_y=measurement[3], v_z=None, 
                                       a_x=None, a_y=None, a_z=None,
-                                      yaw=None, r_yaw=None, P=tmp_noise))
+                                      yaw=None, r_yaw=None, P=measurementNoise))
     fusionList = fusionListCls(time)
     for state in States.T:
-        fusionList.append(Obstacle(pos_x=state[0], pos_y=state[1],
-                                   pos_z=None, v_x=state[2], 
+        fusionList.append(Obstacle(pos_x=state[0], pos_y=state[2],
+                                   pos_z=None, v_x=state[1], 
                                    v_y=state[3], v_z=None, 
                                    a_x=None, a_y=None, a_z=None,
-                                   yaw=None, r_yaw=None, P=tmp_noise))
+                                   yaw=None, r_yaw=None, P=measurementNoise))
 
-    mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, 
-                                                  sensorObjList)
+    mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
     rowInd, colInd = assc.matchObjs(mahalanobisMatrix)  
     kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
     
@@ -47,10 +47,10 @@ def matExec(time, Measurements, States):
     N_obstacles = len(fusionList)
     stateEstimates = np.zeros((4, N_obstacles)) # (pos_x, pos_y, vel_x, vel_y)
     for i in range(N_obstacles):
-        stateEstimates[0,i] = fusionList[i].s_vector[0] 
-        stateEstimates[1,i] = fusionList[i].s_vector[1] 
-        stateEstimates[2,i] = fusionList[i].s_vector[3] 
-        stateEstimates[3,i] = fusionList[i].s_vector[4] 
+        stateEstimates[0,i] = fusionList[i].s_vector[0]  # pos_x
+        stateEstimates[1,i] = fusionList[i].s_vector[3]  # v_x
+        stateEstimates[2,i] = fusionList[i].s_vector[1]  # pos_y 
+        stateEstimates[3,i] = fusionList[i].s_vector[4]  # v_y
 
     print(50 * "**")
     print("Time: %f" %time)

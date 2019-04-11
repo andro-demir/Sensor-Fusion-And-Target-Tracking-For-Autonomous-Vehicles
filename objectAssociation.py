@@ -18,32 +18,25 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
     from a fusion object and a sensor object is evaluated. 
     mahalanobisMatrix (ndarray): The cost matrix of the bipartite graph.
     '''
+    measurementNoise = np.array([[22.1,0,0,0], [0,22.1,0,0], 
+                                 [0,0,2209,0], [0,0,0,2209]])
     numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
     mahalanobisMatrix = np.zeros((numSensorObjs, numFusionObjs))
     for i in range(numFusionObjs):
-        # first remove None elements from the state vector:
-        fusionList[i].s_vector = remove_none(fusionList[i].s_vector)
         for j in range(numSensorObjs):
-            # first remove None elements from the state vector:
-            sensorObjList[j].s_vector = remove_none(sensorObjList[j].s_vector)
-            # innovation covariance between 2 state estimates (3.14):
-            # using only pos_x and pos_y, otherwise  we get singular matrix.
-            diff = np.asarray(fusionList[i].s_vector[:2]) - \
-                   np.asarray(sensorObjList[j].s_vector[:2])
-            diff = diff.reshape((1,2))
-            V = np.vstack((np.asarray(fusionList[i].s_vector[:2]), 
-                           np.asarray(sensorObjList[j].s_vector[:2])))
-            V = np.cov(V.T)
-            try:
-                IV = inv(V)
-                mahDist = np.sqrt(diff @ IV @ diff.T)
-            except: # TODO: LinAlgError raises due to singular array in some cases
-                mahDist = uniform(0, 0.2) 
-            
-            if math.isnan(mahDist):
-                mahalanobisMatrix[j,i] = 0
-            else: 
-                mahalanobisMatrix[j,i] = mahDist
+            x = np.concatenate((fusionList[i].s_vector[:2].reshape((1,2)),
+                                fusionList[i].s_vector[3:5].reshape((1,2))),
+                                axis=1) 
+            y = np.concatenate((sensorObjList[j].s_vector[:2].reshape((1,2)),
+                                sensorObjList[j].s_vector[3:5].reshape((1,2))),
+                                axis=1)
+            # Get the covariance V:
+            V = np.concatenate((x,y))
+            V = V - (np.ones((2,2)) @ V) / 2.0
+            V = (V.T @ V) / 2.0 + measurementNoise
+            IV = inv(V)
+            mahDist = np.sqrt((x-y) @ IV @ (x-y).T)
+            mahalanobisMatrix[j,i] = mahDist
     
     return mahalanobisMatrix
 
@@ -107,7 +100,5 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
 
     return fusionList 
    
-def remove_none(l):
-    return np.array([x for x in l if x is not None])
     
 
