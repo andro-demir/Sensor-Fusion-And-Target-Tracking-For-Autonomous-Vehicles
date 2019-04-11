@@ -107,7 +107,7 @@ class SimSensor(object):
         return list_obstacle, time  # , ids_obstacle
 
 
-class fusionList(list):
+class objectList(list):
     def __init__(self, timeStamp, sensor_specs={}):
         self.timeStamp = timeStamp
         self.sensor_specs = sensor_specs
