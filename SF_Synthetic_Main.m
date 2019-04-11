@@ -193,7 +193,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         TrackerStep = TrackerStep + 1;
 
 %----------------------------------------------------------------------------------------------
-%-----------------------------------MATLAB Traker----------------------------------------------
+%-----------------------------------MATLAB Tracker----------------------------------------------
 %----------------------------------------------------------------------------------------------
 
         vehicleLength = sensors{1}.ActorProfiles.Length;
@@ -201,7 +201,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         confirmedTracks1 = updateTracks(tracker, detectionClusters, time);
         
 %----------------------------------------------------------------------------------------------
-%-----------------------------------Eatron Traker----------------------------------------------
+%-----------------------------------Eatron Tracker----------------------------------------------
 %----------------------------------------------------------------------------------------------
         
         %% Cluster Detections
@@ -222,8 +222,10 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
              Tracks(i).State, Tracks(i).StateCovariance,Q,Fusion_dt);
         end
         
-        % Flag-case scenario for running the Pyhton code 
+        %% CSL - KF TRACKER
+        % Flag-case scenario for running the Python code
         % (for tracker data association and tracker kalman update)
+        % Note: In Eatron's code: Measurements = [x vx y vy]'
         if runPythonCode==true             
             my_objectAssociation = py.importlib.import_module('objectAssociation');
             py.importlib.reload(my_objectAssociation);
