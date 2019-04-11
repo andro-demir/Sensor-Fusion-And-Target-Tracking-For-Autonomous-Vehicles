@@ -218,6 +218,7 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
         s_vector = sensor_obj.s_vector
         P = sensor_obj.P
         if not all(s_vector[:3] == s_vector[:3]):  # some missing position measurements
+            sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             pos_initializers = sensor_specs['pos_initializers']
             pos_nans = np.where(np.isnan(s_vector[:3]))[0]
             for i in pos_nans:
@@ -227,6 +228,7 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
                 P[:, i] = 0.
                 P[i, i] = 1e18
         if not all(s_vector[3:6] == s_vector[3:6]):  # some missing velocity measurements
+            sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             vel_initializers = sensor_specs['vel_initializers']
             vel_nans = np.where(np.isnan(s_vector[3:6]))[0]
             for i in vel_nans:

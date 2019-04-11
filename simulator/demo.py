@@ -58,23 +58,23 @@ def main():
             mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList,
                                                           sensorObjList)
             rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
-            # print(50 * '**')
-            # print("At Time: %f and Sensor Idx: %i" %(time,
-            #                                               sensor_idx))
-            #
-            # print("Fusion List")
-            # for obstacle in fusionList:
-            #     print(obstacle.s_vector)
-            #
-            # print("Sensor List")
-            # for obstacle in sensorObjList:
-            #     print(obstacle.s_vector)
-            #
-            # print("Mahalanobis matrix:\n", mahalanobisMatrix)
-            # print("Row indices:\n", rowInd)
-            # print("Column indices:\n", colInd)
-            # if idx == 1:
-            #     print('sf')
+            print(50 * '**')
+            print("At Time: %f and Sensor Idx: %i" %(time,
+                                                          sensor_idx))
+
+            print("Fusion List")
+            for obstacle in fusionList:
+                print(obstacle.s_vector)
+
+            print("Sensor List")
+            for obstacle in sensorObjList:
+                print(obstacle.s_vector)
+
+            print("Mahalanobis matrix:\n", mahalanobisMatrix)
+            print("Row indices:\n", rowInd)
+            print("Column indices:\n", colInd)
+            if idx == 1:
+                print('sf')
             kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
 
             # Probability of existence of obstacles is updated:
@@ -93,22 +93,22 @@ def main():
         states.fill(np.nan)
         return states
 
-    obj_states = [empty_states(len(fusion_hist), len(obstacle.s_vector)) for _ in
-                  fusionList]
-
-    for idx, s_vectors in enumerate(fusion_hist):
-        for obj_idx, s_vector in enumerate(s_vectors):
-            obj_states[obj_idx][idx] = np.copy(s_vector)
-
-    sensor_measures = []
-    for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
-        print (set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
-        indicies = [np.where(np.array(sensor.list_object_id) == obj_id)[0] for obj_id in
-                    set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0])]
-        sensor_measures.append([[sensor.list_state[i] for i in obj] for obj in indicies])
-
-    plot_sensor_measurements(sensor_measures)
-    scatter(obj_states)
+    # obj_states = [empty_states(len(fusion_hist), len(obstacle.s_vector)) for _ in
+    #               fusionList]
+    #
+    # for idx, s_vectors in enumerate(fusion_hist):
+    #     for obj_idx, s_vector in enumerate(s_vectors):
+    #         obj_states[obj_idx][idx] = np.copy(s_vector)
+    #
+    # sensor_measures = []
+    # for sensor in [cam_front, cam_rear, radar_front, radar_rear]:
+    #     print (set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0]))
+    #     indicies = [np.where(np.array(sensor.list_object_id) == obj_id)[0] for obj_id in
+    #                 set(np.array(sensor.list_object_id, dtype=int)[:, 0, 0])]
+    #     sensor_measures.append([[sensor.list_state[i] for i in obj] for obj in indicies])
+    #
+    # plot_sensor_measurements(sensor_measures)
+    # scatter(obj_states)
     return
 
 def plot_sensor_measurements(sensor_measures):
