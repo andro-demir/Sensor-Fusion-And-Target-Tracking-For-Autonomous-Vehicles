@@ -114,5 +114,4 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     return fusionList
 
 
-def remove_none(l):
-    return np.array([x for x in l if x is not None])
+
