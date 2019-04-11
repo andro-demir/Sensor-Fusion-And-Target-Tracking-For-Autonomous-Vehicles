@@ -20,12 +20,28 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
     from a fusion object and a sensor object is evaluated. 
     mahalanobisMatrix (ndarray): The cost matrix of the bipartite graph.
     '''
+    measurementNoise = np.array([[22.1,0,0,0], [0,22.1,0,0], 
+                                 [0,0,2209,0], [0,0,0,2209]])
     numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
     mahalanobisMatrix = np.zeros((numSensorObjs, numFusionObjs))
     for i in range(numFusionObjs):
-        # first remove None elements from the state vector:
-        fusionList[i].s_vector = remove_none(fusionList[i].s_vector)
         for j in range(numSensorObjs):
+<<<<<<< HEAD
+            x = np.concatenate((fusionList[i].s_vector[:2].reshape((1,2)),
+                                fusionList[i].s_vector[3:5].reshape((1,2))),
+                                axis=1) 
+            y = np.concatenate((sensorObjList[j].s_vector[:2].reshape((1,2)),
+                                sensorObjList[j].s_vector[3:5].reshape((1,2))),
+                                axis=1)
+            # Get the covariance V:
+            V = np.concatenate((x,y))
+            V = V - (np.ones((2,2)) @ V) / 2.0
+            V = (V.T @ V) / 2.0 + measurementNoise
+            IV = inv(V)
+            mahDist = np.sqrt((x-y) @ IV @ (x-y).T)
+            mahalanobisMatrix[j,i] = mahDist
+    
+=======
             # first remove None elements from the state vector:
             sensorObjList[j].s_vector = remove_none(sensorObjList[j].s_vector)
             # innovation covariance between 2 state estimates (3.14):
@@ -47,6 +63,7 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             else:
                 mahalanobisMatrix[j, i] = mahDist
 
+>>>>>>> 88c11dbeaa29471e554cfe69a2cd55fac894c9d0
     return mahalanobisMatrix
 
 
@@ -102,6 +119,17 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     # initilialize a new object in the global list by assigning a 
     # probability of existence (gamma), if the sensor object doesn't match
     # any objects in the globalList
+<<<<<<< HEAD
+    if numSensorObjs >= rowInd.shape[0]:
+        notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
+                                                 set(list(rowInd))) 
+        for i in notAssignedSensors:
+            sensorObjList[i].p_existence = 1.0  
+            fusionList.append(sensorObjList[i])  
+
+    return fusionList 
+   
+=======
 
     # if numSensorObjs >= rowInd.shape[0]:
     #     notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
@@ -119,6 +147,7 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
 
     #  drop the obj from the fusion list
     fusionList = drop_objects(fusionList)
+>>>>>>> 88c11dbeaa29471e554cfe69a2cd55fac894c9d0
     
     return fusionList
 
