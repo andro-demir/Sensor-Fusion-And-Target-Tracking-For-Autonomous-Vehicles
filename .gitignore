@@ -14,3 +14,4 @@ objectClasses/__pycache__/__init__.cpython-36.pyc
 simulator/demo.py
 *.pdf
 *.pyc
+*.mat

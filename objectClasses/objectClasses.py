@@ -2,7 +2,6 @@
 from numpy import asarray
 import numpy as np
 import scipy.io as sio
-from helper_functions import *
 
 
 class Obstacle:
@@ -71,6 +70,14 @@ class SimSensor(object):
         self.list_noise = list(tmp['list_noise'][0])
         self.list_object_id = list(tmp['list_obj'][0])
         self.name_sensor = filename.split('.')[1]
+        if 'front' in self.name_sensor:
+            position_initializer = np.array((100., 0, 0))
+            velocity_initializer = np.array((0., 0, 0))
+        elif 'rear' in self.name_sensor:
+            position_initializer = np.array((-100., 0, 0))
+            velocity_initializer = np.array((0., 0, 0))
+        self.sensor_specs = {'pos_initializers': position_initializer,
+                             'vel_initializers': velocity_initializer}
 
     def return_obstacle_list(self, time):
         """ Returns observed obstacles at a given time
@@ -101,5 +108,6 @@ class SimSensor(object):
 
 
 class fusionList(list):
-    def __init__(self, timeStamp):
+    def __init__(self, timeStamp, sensor_specs={}):
         self.timeStamp = timeStamp
+        self.sensor_specs = sensor_specs

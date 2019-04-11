@@ -1,6 +1,6 @@
 import numpy as np
-from objectClasses.objectClasses import fusionList as fusionListCls
 
+from objectClasses.objectClasses import Obstacle
 
 def spatial_alignment(obj_list, H_sensor_veh):
     """
@@ -192,10 +192,10 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
         fusion_obj.s_vector[not_nan_idx] = x
 
         # update the last update time of the fusion object
-        fusion_obj.last_update_time = sensor_list.timeStamp
+        fusion_obj.last_update_time = sensor_obj_list.timeStamp
 
         # if there is any new measurements write them to fusion state
-        if first_time_measurement_idx:
+        if len(first_time_measurement_idx):
             fusion_obj.s_vector[first_time_measurement_idx] = sensor_obj.s_vector[
                 first_time_measurement_idx]
             fusion_obj.P[
@@ -232,16 +232,18 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
             for i in vel_nans:
                 s_vector[3:6][i] = np.random.normal(loc=vel_initializers[i],
                                                     scale=vel_initializers[i] / 10.)
-                P[i, :] = 0.
-                P[:, i] = 0.
-                P[i, i] = 1e18
+                P[3+i, :] = 0.
+                P[:, 3+i] = 0.
+                P[3+i, 3+i] = 1e18
 
         if not all(s_vector[6:9] == s_vector[6:9]):  # some missing acc measurements
             acc_nans = np.where(np.isnan(s_vector[6:9]))[0]
             s_vector[6:9][acc_nans] = np.random.normal(size=(len(acc_nans)))
-            P[i, :] = 0.
-            P[:, i] = 0.
-            P[i, i] = 1e18
+            for i in acc_nans:
+                P[6+i, :] = 0.
+                P[:, 6+i] = 0.
+                P[6+i, 6+i] = 1e18
+
 
         new_fusion_elements.append(Obstacle(pos_x=s_vector[0], pos_y=s_vector[1],
                                             pos_z=s_vector[2], v_x=s_vector[3],
