@@ -9,7 +9,7 @@ from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
 from random import uniform
 from helper_functions import initialize_fusion_objects, drop_objects
-from objectClasses.objectClasses import fusionList as fusionListCls
+from objectClasses.objectClasses import objectList as objectListCls
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -81,34 +81,13 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     Initialize a new object with probability of existence: beta.
     :return fusionList (list): updated global list of obstacles
     '''
-    numFusionObjs, numSensorObjs = len(fusionList), len(sensorObjList)
-    # TODO:
-    # reduce the probability of existence if it might be a clutter, reduce
-    # its probability of existence by alpha
-
-    # # Update the state vectors of the obstacles in the fusionList:
-    # for x, y in zip(rowInd, colInd):
-    #     fusionList[y].s_vector = sensorObjList[x].s_vector
-
-    # initilialize a new object in the global list by assigning a 
-    # probability of existence (gamma), if the sensor object doesn't match
-    # any objects in the globalList
-
-    # if numSensorObjs >= rowInd.shape[0]:
-    #     notAssignedSensors = sorted(set(list(range(numSensorObjs))) -
-    #                                              set(list(rowInd)))
-    #     for i in notAssignedSensors:
-    #         sensorObjList[i].p_existence = 1.0
-    #         fusionList.append(sensorObjList[i])
-
     # new initialization function
-    notAssignedSensor_objects = fusionListCls(sensorObjList.timeStamp)
+    notAssignedSensor_objects = objectListCls(sensorObjList.timeStamp)
     notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
                                       idx not in rowInd])
-
     fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
 
-    #  drop the obj from the fusion list
+    # drop the obj from the fusion list
     fusionList = drop_objects(fusionList)
     
     return fusionList

@@ -8,7 +8,7 @@ from objectClasses.objectClasses import SimSensor
 import objectAssociation as assc
 from time import perf_counter
 import warnings
-from objectClasses.objectClasses import fusionList as fusionListCls
+from objectClasses.objectClasses import objectList as objectListCls
 from time import perf_counter
 from helper_functions import kf_measurement_update, temporal_alignment
 import matplotlib.pyplot as plt
@@ -37,7 +37,7 @@ def main():
     list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[0])
     list_object_radar_front, _ = radar_front.return_obstacle_list(time_frame[0])
     list_object_radar_rear, _ = radar_rear.return_obstacle_list(time_frame[0])
-    fusionList = fusionListCls(time_frame[0])
+    fusionList = objectListCls(time_frame[0])
     fusion_hist = [i for i in fusionList]
     fusionList.extend(list_object_cam_front + list_object_cam_rear +
                       list_object_radar_front + list_object_radar_rear)
@@ -52,7 +52,9 @@ def main():
         for detection in [cam_front, cam_rear, radar_front, radar_rear]:
             list_object, _ = detection.return_obstacle_list(time)
             # Sensor data association
-            sensorObjList = fusionListCls(time, sensor_specs=detection.sensor_specs)  # sensor obj list at time idx for sensor_idx
+            # sensor obj list at time idx for sensor_idx
+            sensorObjList = objectListCls(time, 
+                                          sensor_specs=detection.sensor_specs)  
             sensorObjList.extend(list_object)
             temporal_alignment(fusionList, time)
             mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList,
@@ -73,20 +75,17 @@ def main():
             print("Mahalanobis matrix:\n", mahalanobisMatrix)
             print("Row indices:\n", rowInd)
             print("Column indices:\n", colInd)
-            if idx == 1:
-                print('sf')
-            kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
 
+            kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
             # Probability of existence of obstacles is updated:
             fusionList = assc.updateExistenceProbability(fusionList,
                                                          sensorObjList,
                                                          rowInd, colInd)
-
             sensor_idx += 1
 
         fusion_hist.append([i.s_vector for i in fusionList])
-        #if idx == 3:
-        #    exit(1)
+        if idx == 15:
+            exit(1)
 
     def empty_states(r, c):
         states = np.empty((r, c))
@@ -125,12 +124,10 @@ def plot_sensor_measurements(sensor_measures):
                 axs.scatter(obj_measurements[:, 1, 0], obj_measurements[:, 0, 0],
                             c=c, cmap=cmaps[sensor_idx], marker=obj_marks[obj_idx],
                             label='Sens %d, Obj %d' % (sensor_idx, obj_idx))
-
     axs.set_ylabel('Y')
     axs.set_xlabel('X')
     axs.set_ylim([-150, 150])
     axs.set_xlim([-150, 150])
-
     plt.legend()
     plt.show()
 
@@ -140,17 +137,13 @@ def scatter(obj_states):
         all_states = obj_states[i]
         c = np.linspace(0, 1, len(all_states))
         fig, axs = plt.subplots()
-
         axs.scatter(all_states[:, 1], all_states[:, 0], label='Obj', c=c, cmap=cmaps[i])
-
         axs.set_ylabel('Y')
         axs.set_xlabel('X')
         axs.set_ylim([-150, 150])
         axs.set_xlim([-150, 150])
-
         # plt.legend()
         plt.show()
-
 
 '''
 def plot(sensors, predicted_states, which_sensor_idx=0, which_object=0):
