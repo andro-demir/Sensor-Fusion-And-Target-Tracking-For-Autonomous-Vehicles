@@ -2,14 +2,12 @@
 
 import numpy as np
 import math
-import scipy
 from scipy.optimize import linear_sum_assignment
 from scipy.linalg import inv, pinv
 from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
-from random import uniform
 from helper_functions import initialize_fusion_objects, drop_objects
-from objectClasses.objectClasses import objectList as objectListCls
+from Classes.objectClasses import ObjectListCls
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
     '''
@@ -82,7 +80,7 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     :return fusionList (list): updated global list of obstacles
     '''
     # new initialization function
-    notAssignedSensor_objects = objectListCls(sensorObjList.timeStamp)
+    notAssignedSensor_objects = ObjectListCls(sensorObjList.timeStamp)
     notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
                                       idx not in rowInd])
     fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
