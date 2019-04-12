@@ -4,7 +4,7 @@ import sys
 sys.path.append("..")
 import argparse
 import numpy as np
-from Classes.objectClasses import SimSensor, ObjectListCls
+from objectClasses import SimSensor, ObjectListCls
 import objectAssociation as assc
 from time import perf_counter
 import warnings

@@ -1,4 +1,4 @@
-#objectClasses.py
+# objectClasses.py
 import numpy as np
 import scipy.io as sio
 
@@ -22,9 +22,9 @@ class Obstacle:
     """
 
     def __init__(self, pos_x, pos_y, pos_z, v_x, v_y, v_z, a_x, a_y, a_z, yaw,
-                 r_yaw,
+                 r_yaw, last_update_time=0,
                  P=[], dim=(0, 0), dim_uncertainty=0, p_existence=0, c=None,
-                 f=None, last_update_time=0):
+                 f=None):
         self.s_vector = np.asarray([pos_x, pos_y, pos_z,
                                     v_x, v_y, v_z, a_x, a_y, a_z, 
                                     yaw, r_yaw]).astype(float)
@@ -37,8 +37,9 @@ class Obstacle:
         self.H = np.eye(self.s_vector.shape[0])
         # self.create_observation_matrix()
         self.u = np.zeros(shape=(self.s_vector.shape[0],))  # zero input model
-        self.last_update_time = 0  # when the obstacle is in the fusion list
-        # this should be updated for every measurement update
+        # when the obstacle is in the fusion list
+        # this should be updated for every measurement update:
+        self.last_update_time = last_update_time  
 
     def create_observation_matrix(self):
         H = np.eye(self.s_vector.shape[0])
