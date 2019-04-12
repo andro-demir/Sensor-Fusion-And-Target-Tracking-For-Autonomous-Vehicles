@@ -4,6 +4,7 @@ from Classes.objectClasses import Obstacle, ObjectListCls
 import objectAssociation as assc
 from helper_functions import kf_measurement_update, temporal_alignment
 
+
 def matExec(time, Measurements, States, last_update_times):
     '''
     param: time (float)
@@ -16,7 +17,9 @@ def matExec(time, Measurements, States, last_update_times):
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     # Note: In Eatron's code Measurements = [pos_x, v_x, pos_y, v_y]'
-    sensorObjList = ObjectListCls(time)
+    sensorObjList = ObjectListCls(time, sensor_specs={
+        'pos_initializers': np.array((100., 0, 0)),
+        'vel_initializers': np.array((0., 0, 0))})
     measurementNoise = np.array([[22.1, 0, 0, 0, 0, 0], [0, 22.1, 0, 0, 0, 0],
                                  [0, 0, 1, 0, 0, 0], [0, 0, 0, 2209, 0, 0],
                                  [0, 0, 0, 0, 2209, 0], [0, 0, 0, 0, 0, 1]])
@@ -53,7 +56,7 @@ def matExec(time, Measurements, States, last_update_times):
         stateEstimates[2, i] = fusionList[i].s_vector[1]  # pos_y
         stateEstimates[3, i] = fusionList[i].s_vector[4]  # v_y
         last_update_times[0, i] = fusionList[i].last_update_time
-    
+
     print(50 * "**")
     print("Time: %f" % time)
     print("Measurements:\n", Measurements)
