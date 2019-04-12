@@ -230,6 +230,9 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             my_objectClasses = py.importlib.import_module('objectClasses');
             py.importlib.reload(my_objectClasses);
             
+            my_trackManager = py.importlib.import_module('trackManagement');
+            py.importlib.reload(my_trackManager);
+            
             my_objectAssociation = py.importlib.import_module('objectAssociation');
             py.importlib.reload(my_objectAssociation);
             
