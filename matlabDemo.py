@@ -1,6 +1,6 @@
 # matlabDemo.py
 import numpy as np
-from Classes.objectClasses import Obstacle, ObjectListCls
+from objectClasses import Obstacle, ObjectListCls
 import objectAssociation as assc
 from helper_functions import kf_measurement_update, temporal_alignment
 
@@ -17,12 +17,15 @@ def matExec(time, Measurements, States, last_update_times):
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     # Note: In Eatron's code Measurements = [pos_x, v_x, pos_y, v_y]'
-    sensorObjList = ObjectListCls(time, sensor_specs={
+    sensor_specs={
         'pos_initializers': np.array((100., 0, 0)),
-        'vel_initializers': np.array((0., 0, 0))})
-    measurementNoise = np.array([[22.1, 0, 0, 0, 0, 0], [0, 22.1, 0, 0, 0, 0],
-                                 [0, 0, 1, 0, 0, 0], [0, 0, 0, 2209, 0, 0],
-                                 [0, 0, 0, 0, 2209, 0], [0, 0, 0, 0, 0, 1]])
+        'vel_initializers': np.array((0., 0, 0))}
+    sensorObjList = ObjectListCls(time, sensor_specs)
+    measurementNoise = np.zeros((11, 11))
+    measurementNoise[:] = np.nan
+    measurementNoise[:6,:6] = np.array([[22.1, 0, 0, 0, 0, 0], [0, 22.1, 0, 0, 0, 0],
+                                        [0, 0, 1, 0, 0, 0], [0, 0, 0, 2209, 0, 0],
+                                        [0, 0, 0, 0, 2209, 0], [0, 0, 0, 0, 0, 1]])
     for measurement in Measurements.T:
         sensorObjList.append(Obstacle(pos_x=measurement[0],
                                       pos_y=measurement[2],
@@ -37,7 +40,7 @@ def matExec(time, Measurements, States, last_update_times):
                                    v_y=state[3], v_z=None,
                                    a_x=None, a_y=None, a_z=None,
                                    yaw=None, r_yaw=None, P=measurementNoise,
-                                   last_update_time=last_update_times[idx]))
+                                   last_update_time=last_update_times[0][0][idx]))
 
     mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
     rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
@@ -47,6 +50,7 @@ def matExec(time, Measurements, States, last_update_times):
     fusionList = assc.updateExistenceProbability(fusionList,
                                                  sensorObjList,
                                                  rowInd, colInd)
+    
     N_obstacles = len(fusionList)
     stateEstimates = np.zeros((4, N_obstacles))  # (pos_x, vel_x, pos_y, vel_y)
     last_update_times = np.zeros((1, N_obstacles))
@@ -59,8 +63,9 @@ def matExec(time, Measurements, States, last_update_times):
 
     print(50 * "**")
     print("Time: %f" % time)
+    print(Measurements.shape)
     print("Measurements:\n", Measurements)
-    print("Mahalanobis Matrix", mahalanobisMatrix)
+    #print("Mahalanobis Matrix", mahalanobisMatrix)
     print("State Estimates:\n", stateEstimates)
     print("Last Update Times:\n", last_update_times)
-    return stateEstimates
+    return [stateEstimates, last_update_times]

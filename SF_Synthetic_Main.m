@@ -159,6 +159,7 @@ Performance.GhostActors.MA = [];
 Performance.GhostActors.PY = [];
 
 stateEstimates = [];
+lastUpdateTimes = [];
 while advance(scenario) %&& ishghandle(BEP.Parent)   
     timeStep = 0; % for python interoperability
     currentStep = currentStep + 1;
@@ -210,7 +211,6 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         [DetectionClusters] = ClusterDetections(detections, VehicleDim);
         %% Fetch Measurements
         Measurements = FetchMeasurements(DetectionClusters);
-        timeStep = timeStep + 1; % for python interoperability
         %% Tracker Kalman Prediction
         % Predict the tracks states from previous step and propagate them to the current
         % time-step
@@ -227,7 +227,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         % (for tracker data association and tracker kalman update)
         % Note: In Eatron's code: Measurements = [x vx y vy]'
         if runPythonCode==true     
-            my_objectClasses = py.importlib.import_module('Classes');
+            my_objectClasses = py.importlib.import_module('objectClasses');
             py.importlib.reload(my_objectClasses);
             
             my_objectAssociation = py.importlib.import_module('objectAssociation');
@@ -239,16 +239,12 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             my_pydemo = py.importlib.import_module('matlabDemo');
             py.importlib.reload(my_pydemo);
             
-            if timeStep == 1
-                lastUpdateTimes = zeros(1,size(Measurements, 2)) + time;
-            end
-            
             % stateEstimates will be the fusion list for the next time idx
-            stateEstimates = py.matlabDemo.matExec(time, py.numpy.array(Measurements), ...
-                                                   py.numpy.array(stateEstimates), ...
-                                                   py.numpy.array(lastUpdateTimes));
-            stateEstimates = double(stateEstimates); %converts the python numpy array to Matlab array
-            last_update_times = double(last_update_times);
+            pythonOutput = py.matlabDemo.matExec(time, py.numpy.array(Measurements), ...
+                                                  py.numpy.array(stateEstimates), ...
+                                                  py.numpy.array(lastUpdateTimes));
+            stateEstimates = pythonOutput(1); 
+            lastUpdateTimes = pythonOutput(2); 
             Performance.Actors.PYTracks = [Performance.Actors.PYTracks; size(stateEstimates,2)];
         end
         %% Tracker Data Association

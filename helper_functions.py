@@ -1,5 +1,5 @@
 import numpy as np
-from Classes.objectClasses import Obstacle
+from objectClasses import Obstacle
 
 def spatial_alignment(obj_list, H_sensor_veh):
     """
@@ -223,7 +223,6 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
         P = sensor_obj.P
         
         if not all(s_vector[:3] == s_vector[:3]):  # some missing position measurements
-            sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             pos_initializers = sensor_specs['pos_initializers']
             pos_nans = np.where(np.isnan(s_vector[:3]))[0]
             for i in pos_nans:
@@ -234,7 +233,6 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
                 P[i, i] = 1e18
         
         if not all(s_vector[3:6] == s_vector[3:6]):  # some missing velocity measurements
-            sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             vel_initializers = sensor_specs['vel_initializers']
             vel_nans = np.where(np.isnan(s_vector[3:6]))[0]
             for i in vel_nans:
@@ -251,7 +249,6 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
                 P[6+i, :] = 0.
                 P[:, 6+i] = 0.
                 P[6+i, 6+i] = 1e18
-
         new_fusion_elements.append(Obstacle(pos_x=s_vector[0], pos_y=s_vector[1],
                                             pos_z=s_vector[2], v_x=s_vector[3],
                                             v_y=s_vector[4], v_z=s_vector[5],
