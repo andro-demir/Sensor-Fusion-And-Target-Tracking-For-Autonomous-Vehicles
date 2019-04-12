@@ -40,7 +40,7 @@ def matExec(time, Measurements, States, last_update_times):
                                    v_y=state[3], v_z=None,
                                    a_x=None, a_y=None, a_z=None,
                                    yaw=None, r_yaw=None, P=measurementNoise,
-                                   last_update_time=last_update_times[0][0][idx]))
+                                   last_update_time=last_update_times[idx]))
 
     mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
     rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
@@ -63,7 +63,6 @@ def matExec(time, Measurements, States, last_update_times):
 
     print(50 * "**")
     print("Time: %f" % time)
-    print(Measurements.shape)
     print("Measurements:\n", Measurements)
     #print("Mahalanobis Matrix", mahalanobisMatrix)
     print("State Estimates:\n", stateEstimates)
