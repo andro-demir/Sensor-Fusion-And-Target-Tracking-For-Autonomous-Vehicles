@@ -262,17 +262,17 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
     return new_fusion_elements
 
 
-def drop_objects(fusion_list):
+def drop_objects(fusion_list, distance_to_ego=100):
     """
     :param fusion_list:
+    :distance_to_ego: 
     :return:
     """
     fusion_time = fusion_list.timeStamp
     for fusion_obj in fusion_list:
         last_update = fusion_obj.last_update_time
-        distance_to_ego = np.linalg.norm(fusion_obj.s_vector[:3])
-        if fusion_time - last_update > 1. and distance_to_ego > 100:  # no updates in
-            #  last sec and the car is more than 100m away
+        D = np.linalg.norm(fusion_obj.s_vector[:3])
+        if fusion_time - last_update > 1. and D > distance_to_ego:  
             fusion_list.remove(fusion_obj)
 
     return fusion_list

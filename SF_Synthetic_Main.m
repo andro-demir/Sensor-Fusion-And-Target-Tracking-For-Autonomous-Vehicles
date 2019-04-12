@@ -158,9 +158,9 @@ Performance.GhostActors.EA = [];
 Performance.GhostActors.MA = [];
 Performance.GhostActors.PY = [];
 
-States = [];
+stateEstimates = [];
 while advance(scenario) %&& ishghandle(BEP.Parent)   
-    time_step = 1; % for python interoperability
+    timeStep = 0; % for python interoperability
     currentStep = currentStep + 1;
     % Get the scenario time
     time = scenario.SimulationTime;
@@ -210,7 +210,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         [DetectionClusters] = ClusterDetections(detections, VehicleDim);
         %% Fetch Measurements
         Measurements = FetchMeasurements(DetectionClusters);
-        time_step = time_step + 1; % for python interoperability
+        timeStep = timeStep + 1; % for python interoperability
         %% Tracker Kalman Prediction
         % Predict the tracks states from previous step and propagate them to the current
         % time-step
@@ -238,14 +238,17 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
                          
             my_pydemo = py.importlib.import_module('matlabDemo');
             py.importlib.reload(my_pydemo);
-                    
-            [stateEstimates, last_update_times] = py.matlabDemo.matExec(time, ...
-                                                                        py.numpy.array(Measurements), ...
-                                                                        py.numpy.array(States), ...
-                                                                        py.numpy.array(last_update_times));
+            
+            if timeStep == 1
+                lastUpdateTimes = zeros(1,size(Measurements, 2)) + time;
+            end
+            
+            % stateEstimates will be the fusion list for the next time idx
+            stateEstimates = py.matlabDemo.matExec(time, py.numpy.array(Measurements), ...
+                                                   py.numpy.array(stateEstimates), ...
+                                                   py.numpy.array(lastUpdateTimes));
             stateEstimates = double(stateEstimates); %converts the python numpy array to Matlab array
             last_update_times = double(last_update_times);
-            States = stateEstimates; % stateEstimates will be the fusion list for the next time idx
             Performance.Actors.PYTracks = [Performance.Actors.PYTracks; size(stateEstimates,2)];
         end
         %% Tracker Data Association

@@ -60,4 +60,4 @@ def matExec(time, Measurements, States, last_update_times):
     print("Mahalanobis Matrix", mahalanobisMatrix)
     print("State Estimates:\n", stateEstimates)
     print("Last Update Times:\n", last_update_times)
-    return stateEstimates, last_update_times
+    return stateEstimates
