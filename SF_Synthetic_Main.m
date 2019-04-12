@@ -226,23 +226,25 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         % Flag-case scenario for running the Python code
         % (for tracker data association and tracker kalman update)
         % Note: In Eatron's code: Measurements = [x vx y vy]'
-        if runPythonCode==true             
+        if runPythonCode==true     
+            my_objectClasses = py.importlib.import_module('Classes');
+            py.importlib.reload(my_objectClasses);
+            
             my_objectAssociation = py.importlib.import_module('objectAssociation');
             py.importlib.reload(my_objectAssociation);
             
             my_helper = py.importlib.import_module('helper_functions');
             py.importlib.reload(my_helper);
-               
-            addpath('objectClasses')
-            my_objectClasses = py.importlib.import_module('objectClasses');
-            py.importlib.reload(my_objectClasses);
-            
+                         
             my_pydemo = py.importlib.import_module('matlabDemo');
             py.importlib.reload(my_pydemo);
-            
-            stateEstimates = py.matlabDemo.matExec(time, py.numpy.array(Measurements), ...
-                                                   py.numpy.array(States));
+                    
+            [stateEstimates, last_update_times] = py.matlabDemo.matExec(time, ...
+                                                                        py.numpy.array(Measurements), ...
+                                                                        py.numpy.array(States), ...
+                                                                        py.numpy.array(last_update_times));
             stateEstimates = double(stateEstimates); %converts the python numpy array to Matlab array
+            last_update_times = double(last_update_times);
             States = stateEstimates; % stateEstimates will be the fusion list for the next time idx
             Performance.Actors.PYTracks = [Performance.Actors.PYTracks; size(stateEstimates,2)];
         end

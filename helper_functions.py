@@ -1,6 +1,5 @@
 import numpy as np
-
-from objectClasses.objectClasses import Obstacle
+from Classes.objectClasses import Obstacle
 
 def spatial_alignment(obj_list, H_sensor_veh):
     """
@@ -45,8 +44,9 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
             w[4:6] = np.random.normal(size=(2,))  # noise added to accelerations
             accs = range(4, 6)
             Q = np.zeros((8, 8))
-            Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), np.eye(
-                2))  # noise added only at the last derivatives:
+            Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), 
+                                        np.eye(2))  
+            # noise added only at the last derivatives:
             Q[-1, -1] = np.random.normal()
         else:  # z axis is included
             F = np.array([[1, 0, 0, delta, 0, 0, 0.5 * delta ** 2, 0, 0, 0, 0],
@@ -138,8 +138,9 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
             miss_accs_fusion = {i for i in range(6, 9) if not i in not_nan_idx_fus}
             miss_accs_sensor = {i for i in range(6, 9) if not i in not_nan_idx_sens}
 
-        if miss_accs_fusion:  # for the missing accelerations, initialize with random
-            # numbers but give huge uncertanity for them
+        # for the missing accelerations, initialize with random
+        # numbers but give huge uncertanity for them
+        if miss_accs_fusion:  
             s_vector_f[list(miss_accs_fusion)] = 0.001 * np.random.normal(
                 size=len(miss_accs_fusion))
             maxs = max(list(miss_accs_fusion))
@@ -147,8 +148,10 @@ def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices)
             P_f[mins:maxs + 1, :maxs + 1] = 0.
             P_f[:maxs + 1, mins:maxs + 1] = 0.
             P_f[mins:maxs + 1, mins:maxs + 1] = 1e18 * np.eye(maxs - mins + 1)
-        if miss_accs_sensor:  # if sensor is missing accs, use the last estimate of the
-            # state as measuremnt with huge uncertanity around it
+        
+        # if sensor is missing accs, use the last estimate of the
+        # state as measuremnt with huge uncertanity around it
+        if miss_accs_sensor:  
             maxs = max(list(miss_accs_sensor))
             mins = min(list(miss_accs_sensor))
             P_s[mins:maxs + 1, :maxs + 1] = 0.
@@ -214,9 +217,11 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
     sensor_specs = not_assigned_sensor_obj_list.sensor_specs
     time = not_assigned_sensor_obj_list.timeStamp
     new_fusion_elements = []
+    
     for sensor_obj in not_assigned_sensor_obj_list:
         s_vector = sensor_obj.s_vector
         P = sensor_obj.P
+        
         if not all(s_vector[:3] == s_vector[:3]):  # some missing position measurements
             sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             pos_initializers = sensor_specs['pos_initializers']
@@ -227,6 +232,7 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
                 P[i, :] = 0.
                 P[:, i] = 0.
                 P[i, i] = 1e18
+        
         if not all(s_vector[3:6] == s_vector[3:6]):  # some missing velocity measurements
             sensor_specs = not_assigned_sensor_obj_list.sensor_specs
             vel_initializers = sensor_specs['vel_initializers']
@@ -246,7 +252,6 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
                 P[:, 6+i] = 0.
                 P[6+i, 6+i] = 1e18
 
-
         new_fusion_elements.append(Obstacle(pos_x=s_vector[0], pos_y=s_vector[1],
                                             pos_z=s_vector[2], v_x=s_vector[3],
                                             v_y=s_vector[4], v_z=s_vector[5],
@@ -259,7 +264,6 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
 
 def drop_objects(fusion_list):
     """
-
     :param fusion_list:
     :return:
     """
@@ -283,14 +287,17 @@ if debug:
 
     # create objects
     P_init = np.eye(11)
-    fusion_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, None, None, None, P=np.eye(11))
-    sensor_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, None, None, None, P=np.eye(11))
+    fusion_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, 
+                          None, None, None, P=np.eye(11))
+    sensor_obj = Obstacle(0, 0, 0, 0, 0, 0, None, None, 
+                          None, None, None, P=np.eye(11))
     fusion_list = fusionList(timeStamp=0)
     fusion_list.append(fusion_obj)
     sensor_list = fusionList(timeStamp=0)
     sensor_list.append(sensor_obj)
 
-    sensor1 = Sensor(timeStamp=0, obj_list=sensor_list, H_sensor_veh=np.eye(11))
+    sensor1 = Sensor(timeStamp=0, obj_list=sensor_list, 
+                     H_sensor_veh=np.eye(11))
 
     # create true states
     vel_x, vel_y = 5., 3.
@@ -313,7 +320,8 @@ if debug:
     measurements[::measurements_time, np.isnan(sensor_obj.s_vector)] = np.nan
 
     predicted_state = []
-    for idx, (true_state, measurement) in enumerate(zip(true_states, measurements)):
+    for idx, (true_state, measurement) in enumerate(zip(true_states, 
+                                                        measurements)):
         if not np.isnan(measurement).all():
             sensor1.timeStamp = idx
             noise = 5. * np.random.normal(size=(11,))

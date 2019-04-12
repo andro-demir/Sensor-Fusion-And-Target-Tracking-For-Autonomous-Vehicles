@@ -4,12 +4,10 @@ import sys
 sys.path.append("..")
 import argparse
 import numpy as np
-from objectClasses.objectClasses import SimSensor
+from Classes.objectClasses import SimSensor, ObjectListCls
 import objectAssociation as assc
 from time import perf_counter
 import warnings
-from objectClasses.objectClasses import objectList as objectListCls
-from time import perf_counter
 from helper_functions import kf_measurement_update, temporal_alignment
 import matplotlib.pyplot as plt
 
@@ -37,7 +35,7 @@ def main():
     list_object_cam_rear, _ = cam_rear.return_obstacle_list(time_frame[0])
     list_object_radar_front, _ = radar_front.return_obstacle_list(time_frame[0])
     list_object_radar_rear, _ = radar_rear.return_obstacle_list(time_frame[0])
-    fusionList = objectListCls(time_frame[0])
+    fusionList = ObjectListCls(time_frame[0])
     fusion_hist = [i for i in fusionList]
     fusionList.extend(list_object_cam_front + list_object_cam_rear +
                       list_object_radar_front + list_object_radar_rear)
@@ -53,7 +51,7 @@ def main():
             list_object, _ = detection.return_obstacle_list(time)
             # Sensor data association
             # sensor obj list at time idx for sensor_idx
-            sensorObjList = objectListCls(time, 
+            sensorObjList = ObjectListCls(time, 
                                           sensor_specs=detection.sensor_specs)  
             sensorObjList.extend(list_object)
             temporal_alignment(fusionList, time)
