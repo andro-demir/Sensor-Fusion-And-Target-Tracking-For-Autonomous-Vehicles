@@ -6,7 +6,7 @@ from scipy.optimize import linear_sum_assignment
 from scipy.linalg import inv, pinv
 from scipy.spatial.distance import mahalanobis
 from sklearn.preprocessing import normalize
-from helper_functions import initialize_fusion_objects, drop_objects
+from trackManagement import initialize_fusion_objects, drop_objects
 from objectClasses import ObjectListCls
 
 def getMahalanobisMatrix(fusionList, sensorObjList):
