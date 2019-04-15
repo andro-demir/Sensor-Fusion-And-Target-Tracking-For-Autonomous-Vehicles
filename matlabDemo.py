@@ -1,11 +1,12 @@
 # matlabDemo.py
 import numpy as np
+import argparse
 from objectClasses import Obstacle, ObjectListCls
 import objectAssociation as assc
 from helper_functions import kf_measurement_update, temporal_alignment
 
 
-def matExec(time, Measurements, States, last_update_times):
+def main(time, Measurements, States, last_update_times):
     '''
     param: time (float)
     param: Measurements (2d array) -- Sensor Obstacle List at t
@@ -17,6 +18,7 @@ def matExec(time, Measurements, States, last_update_times):
     # We created the fusionList at time,
     # Get the sensorObjectList at time+1
     # Note: In Eatron's code Measurements = [pos_x, v_x, pos_y, v_y]'
+    args = parse_args()
     sensor_specs={
         'pos_initializers': np.array((100., 0, 0)),
         'vel_initializers': np.array((0., 0, 0))}
@@ -43,14 +45,15 @@ def matExec(time, Measurements, States, last_update_times):
                                    last_update_time=last_update_times[idx]))
 
     mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
-    rowInd, colInd = assc.matchObjs(mahalanobisMatrix)
+    rowInd, colInd = assc.matchObjs(mahalanobisMatrix, args.clutter_threshold)
     kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
 
     # Probability of existence of obstacles is updated:
     fusionList = assc.updateExistenceProbability(fusionList,
                                                  sensorObjList,
-                                                 rowInd, colInd)
-    
+                                                 rowInd, colInd, 
+                                                 args.last_seen,
+                                                 args.distance_to_ego)
     N_obstacles = len(fusionList)
     stateEstimates = np.zeros((4, N_obstacles))  # (pos_x, vel_x, pos_y, vel_y)
     last_update_times = np.zeros((1, N_obstacles))
@@ -64,7 +67,26 @@ def matExec(time, Measurements, States, last_update_times):
     print(50 * "**")
     print("Time: %f" % time)
     print("Measurements:\n", Measurements)
-    #print("Mahalanobis Matrix", mahalanobisMatrix)
+    print("Mahalanobis Matrix", mahalanobisMatrix)
     print("State Estimates:\n", stateEstimates)
     print("Last Update Times:\n", last_update_times)
     return [stateEstimates, last_update_times]
+
+def parse_args():
+    parser = argparse.ArgumentParser(description='CSL-EATRON KF TRACKER.', 
+                    formatter_class=argparse.ArgumentDefaultsHelpFormatter)    
+    parser.add_argument('--clutter_threshold', type=float, default=1.5, 
+                        help='if mahalanobis distance > clutter thresholod,'
+                             'assign as false positive')
+    parser.add_argument('--last_seen', type=float, default=0.4, 
+                        help='if the tracked object has not been seen longer'
+                             'than last_seen, delete it from the fusion list')
+    parser.add_argument('--distance_to_ego', type=float, default=80, 
+                        help='distance to ego (L1 norm of the tracked objects'
+                             'state vector)')
+    args = parser.parse_args()
+    return args
+
+
+if __name__ == "__main__":
+    main()

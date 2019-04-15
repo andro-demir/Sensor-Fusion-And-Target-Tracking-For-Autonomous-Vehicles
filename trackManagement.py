@@ -51,7 +51,7 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
     return new_fusion_elements
 
 
-def drop_objects(fusion_list, last_seen=0.4, distance_to_ego=80):
+def drop_objects(fusion_list, last_seen, distance_to_ego):
     """
     :param fusion_list:
     :distance_to_ego: 

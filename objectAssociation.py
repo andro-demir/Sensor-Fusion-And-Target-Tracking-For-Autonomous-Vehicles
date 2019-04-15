@@ -39,10 +39,14 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             mahalanobisMatrix[j,i] = mahDist
     return mahalanobisMatrix
 
-def matchObjs(mahalanobisMatrix):
+def matchObjs(mahalanobisMatrix, clutter_threshold):
     '''
     :param: mahalanobisMatrix(np.array): The cost matrix of the 
                                           bipartite graph.
+    :param: clutter_threshold(double): if the mahalanobis distance is greater
+                                       than this threshold value, classify this
+                                       rowInd-colInd match as a false positive
+                                       or clutter
     :return rowInd, colInd (np.array): An array of row indices and one of  
                                         corresponding column indices giving 
                                         the optimal assignment. 
@@ -55,28 +59,30 @@ def matchObjs(mahalanobisMatrix):
     minimal cost.
     '''
     rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
+    matched_tuples = list(zip(rowInd, colInd))
+    # get the rows and columns where mahalanobis distance is greater than 
+    # clutter threshold
+    fp_rowInd, fp_colInd = np.where(mahalanobisMatrix >= clutter_threshold)
+    fp_tuples = list(zip(fp_rowInd, fp_colInd))
+    # remove the clutter detections from the matches
+    cleaned_matches = list(set(matched_tuples)-set(fp_tuples))
+    # return the row index and column index of true positive 
+    # object associations as numpy arrays.
+    cleaned_matches = np.array(cleaned_matches, dtype=np.dtype('int,int'))
+    rowInd, colInd = cleaned_matches['f0'], cleaned_matches['f1']
     return rowInd, colInd
 
-
-def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
+def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd,
+                               last, D):
     '''
     :param fusionList (list): objects in the global list. 
     :param sensorObjList (List): objects in the radar / vision sensor 
                                  measurements.
-    :param: mahalanobisMatrix(np.array): The cost matrix of the 
-                                          bipartite graph.
-    Variables called from the helper functions:
-    :param rowInd, colInd (np.array): An array of row indices and one of  
+    :return rowInd, colInd (np.array): An array of row indices and one of  
                                         corresponding column indices giving 
-                                        the optimal assignment. 
-    :param thresh (double): threshold level. If the cost is bigger than
-                            this, it might be a clutter - reduce the 
-                            probability of existence by alpha.
-    :param alpha, beta, gamma (double): coeffs to update the probabilities  
-                                        of existence
-    If a row (a sensor object) is not assigned to a column (an object in 
-    the global(fusion) list), it may be a new object in the environment. 
-    Initialize a new object with probability of existence: beta.
+                                        the optimal assignment.
+    :param last(double): time for being last seen
+    :param D(double): distance to ego (L1 norm of the state vector)
     :return fusionList (list): updated global list of obstacles
     '''
     # new initialization function
@@ -87,7 +93,7 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
     fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
 
     # drop the obj from the fusion list
-    fusionList = drop_objects(fusionList)
+    fusionList = drop_objects(fusionList, last_seen=last, distance_to_ego=D)
     return fusionList
 
 
