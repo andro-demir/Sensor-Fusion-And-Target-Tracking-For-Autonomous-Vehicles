@@ -51,18 +51,30 @@ def initialize_fusion_objects(not_assigned_sensor_obj_list):
     return new_fusion_elements
 
 
-def drop_objects(fusion_list, last_seen=0.4, distance_to_ego=80):
+def drop_objects(fusion_list, cluttered_matches, last_seen, distance_to_ego):
     """
     :param fusion_list:
     :distance_to_ego: 
     :last_seen
     :return:
     """
+    num_dropped = 0
     fusion_time = fusion_list.timeStamp
-    for fusion_obj in fusion_list:
+    # indices of false positive detections
+    fp_detections = [i[1] for i in cluttered_matches]
+    # indices of lost actors (because of long distance to ego / 
+    # last update time is long))
+    lost_detections = []
+    for idx, fusion_obj in enumerate(fusion_list):
         last_update = fusion_obj.last_update_time
         D = np.linalg.norm(fusion_obj.s_vector[:3])
         if fusion_time - last_update > last_seen or D > distance_to_ego:  
-            fusion_list.remove(fusion_obj)
-
+            lost_detections.append(idx)
+            num_dropped += 1
+    
+    print("Number of dropped actors (because of long distance to ego /" 
+          " last update time is long): %i" %(num_dropped))
+    idx_to_del = list(set(fp_detections + lost_detections))
+    fusion_list = np.array(fusion_list)
+    return list(np.delete(fusion_list, idx_to_del))
     return fusion_list

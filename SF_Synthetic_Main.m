@@ -243,16 +243,17 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             py.importlib.reload(my_pydemo);
             
             % pythonOutput = [stateEstimates, lastUpdateTimes]
-            pythonOutput = py.matlabDemo.matExec(time, py.numpy.array(Measurements), ...
-                                                 py.numpy.array(stateEstimates), ...
-                                                 py.numpy.array(lastUpdateTimes));
+            pythonOutput = py.matlabDemo.main(time, py.numpy.array(Measurements), ...
+                                              py.numpy.array(stateEstimates), ...
+                                              py.numpy.array(lastUpdateTimes));
             
             % convert numpy array to matlab arrays
             stateEstimates = double(pythonOutput{1}); 
             lastUpdateTimes = double(pythonOutput{2});
+            num_true_positive = int64(pythonOutput{3});
             
-            N_obstacles = size(stateEstimates,2);            
-            Performance.Actors.PYTracks = [Performance.Actors.PYTracks; N_obstacles];
+            %N_obstacles = size(stateEstimates,2);            
+            Performance.Actors.PYTracks = [Performance.Actors.PYTracks; num_true_positive];
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks

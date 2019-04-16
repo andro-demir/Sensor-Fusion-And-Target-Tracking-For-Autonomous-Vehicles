@@ -39,10 +39,14 @@ def getMahalanobisMatrix(fusionList, sensorObjList):
             mahalanobisMatrix[j,i] = mahDist
     return mahalanobisMatrix
 
-def matchObjs(mahalanobisMatrix):
+def matchObjs(mahalanobisMatrix, clutter_threshold):
     '''
     :param: mahalanobisMatrix(np.array): The cost matrix of the 
                                           bipartite graph.
+    :param: clutter_threshold(double): if the mahalanobis distance is greater
+                                       than this threshold value, classify this
+                                       rowInd-colInd match as a false positive
+                                       or clutter
     :return rowInd, colInd (np.array): An array of row indices and one of  
                                         corresponding column indices giving 
                                         the optimal assignment. 
@@ -55,40 +59,62 @@ def matchObjs(mahalanobisMatrix):
     minimal cost.
     '''
     rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
-    return rowInd, colInd
+    matched_tuples = list(zip(rowInd, colInd))
+    print("Matched tuples (rowInd: Meas at t+1, colInd: State Est at t)")
+    print(rowInd)
+    print(colInd)
+    
+    # get the rows and columns where mahalanobis distance is greater than 
+    # clutter threshold
+    cluttered_matches = [] # list of false positive matches as tuples
+    cleaned_matches = [] # list of true postive matches as tuples
+    for (x,y) in list(zip(rowInd, colInd)):
+        if mahalanobisMatrix[x,y] >= clutter_threshold:
+            cluttered_matches.append((x,y))
+        else:
+            cleaned_matches.append((x,y))
+
+    print("False positive / Clutter tuples (rowInd: Meas at t+1, "
+                                            "colInd: State Est at t):")
+    print(cluttered_matches)
+    print("Cleaned matches (rowInd: Meas at t+1, colInd: State Est at t)")
+    print(cleaned_matches)
+    num_true_postive = len(cleaned_matches)
+
+    rowInd = [i[0] for i in cleaned_matches]
+    colInd = [i[1] for i in cleaned_matches]
+    print("Number of cluttered sensor readings:", len(cluttered_matches))
+    return rowInd, colInd, cluttered_matches, num_true_postive
 
 
-def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd):
+def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd, 
+                               cluttered_matches, last, D):
     '''
     :param fusionList (list): objects in the global list. 
     :param sensorObjList (List): objects in the radar / vision sensor 
                                  measurements.
-    :param: mahalanobisMatrix(np.array): The cost matrix of the 
-                                          bipartite graph.
-    Variables called from the helper functions:
-    :param rowInd, colInd (np.array): An array of row indices and one of  
+    :return rowInd, colInd (np.array): An array of row indices and one of  
                                         corresponding column indices giving 
-                                        the optimal assignment. 
-    :param thresh (double): threshold level. If the cost is bigger than
-                            this, it might be a clutter - reduce the 
-                            probability of existence by alpha.
-    :param alpha, beta, gamma (double): coeffs to update the probabilities  
-                                        of existence
-    If a row (a sensor object) is not assigned to a column (an object in 
-    the global(fusion) list), it may be a new object in the environment. 
-    Initialize a new object with probability of existence: beta.
+                                        the optimal assignment.
+    :param last(double): time for being last seen
+    :param D(double): distance to ego (L1 norm of the state vector)
     :return fusionList (list): updated global list of obstacles
     '''
     # new initialization function
+    cluttered_sensors = [i[0] for i in cluttered_matches]
+    new_object_idx = list(set(range(len(sensorObjList))) - set(rowInd) - set(cluttered_sensors))
+    print("New sensor object indices: (Meas at t+1)")
+    print(new_object_idx)
     notAssignedSensor_objects = ObjectListCls(sensorObjList.timeStamp, 
                                               sensorObjList.sensor_specs)
     notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
-                                      idx not in rowInd])
+                                      idx in new_object_idx])
     fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
-
     # drop the obj from the fusion list
-    fusionList = drop_objects(fusionList)
+    fusionList = drop_objects(fusionList, cluttered_matches, 
+                              last_seen=last, distance_to_ego=D)
     return fusionList
+    
 
 
 

@@ -6,7 +6,8 @@ def spatial_alignment(obj_list, H_sensor_veh):
     Transform the state vector of the object from sensor coordinate frame
     to vehicle coordinate frame. Update state and cov of the objects.
     :param obj_list: (list) a list that contains obstacles(class),
-    :param H_sensor_veh: Transformation matrix from sensor to vehicle coordinate frame
+    :param H_sensor_veh: Transformation matrix from sensor 
+                         to vehicle coordinate frame
     :return:
     """
     for obj in obj_list:
@@ -19,8 +20,9 @@ def spatial_alignment(obj_list, H_sensor_veh):
 def temporal_alignment(obj_list, current_time, method='SingleStep'):
     """
     preliminary kalman filter update for the obj.
-    :param obj_list: (class) a list that contains obstacles(class), with property:
-                    timeStamp (this is the time of the objects in the list)
+    :param obj_list: (class) a list that contains obstacles(class), 
+                     with property:
+                     timeStamp (this is the time of the objects in the list)
     :param current_time:
     :param method: (str) Method for integral, if 'SingleStep' single integral
                    will be taken with delta equal to time
@@ -41,7 +43,7 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
                           [0, 0, 0, 0, 0, 0, 0, 0]])
 
             w = np.zeros((8,))
-            w[4:6] = np.random.normal(size=(2,))  # noise added to accelerations
+            w[4:6] = np.random.normal(size=(2,)) # noise added to accelerations
             accs = range(4, 6)
             Q = np.zeros((8, 8))
             Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), 
@@ -63,7 +65,8 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
 
             w = np.zeros((11,))
             accs = range(6, 9)
-            w[accs] = np.random.normal(size=(3,))  # noise added to accelerations
+            # noise added to accelerations
+            w[accs] = np.random.normal(size=(3,))  
 
             Q = np.zeros((11, 11))
             Q[6:9, 6:9] = np.multiply(np.random.normal(size=(3, 3)), np.eye(
@@ -92,34 +95,36 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
     elif method == 'EqualStep':
         delta = 1  # ! TODO: is this a correct precision??
         for obj in obj_list:
-            for _ in range(obj_list.timeStamp + delta, current_time + delta, delta):
+            for _ in range(obj_list.timeStamp+delta, current_time+delta, delta):
                 alignment_equations(obj, delta=delta)
         obj_list.timeStamp = current_time
 
     pass
 
 
-def kf_measurement_update(fusion_obj_list, sensor_obj_list, association_indices):
+def kf_measurement_update(fusion_obj_list, sensor_obj_list, 
+                          association_indices):
     """
     When there is a new measurement in the sensor, run the following kalman
     filter equations to update the fusion object's state and covariance.
     Make sure to run temporal_alignment() on the fusion_obj
     before calling this function.
 
-    :param fusion_obj_list: (class) the object being tracked (in the fusion) with
-    the properties: s_vector (current state), P (state covariance matrix)
-    :param sensor_obj_list: (list) the object being tracked (in the sensor) with
-    the properties: s_vector (current state), H (the observation model),
-    P (measurement noise covariance matrix)
-    :param association_indices: (list,list), indicies of object association in the lists
+    :param fusion_obj_list: (class) the object being tracked (in the fusion) 
+    with the properties: s_vector (current state), P (state covariance matrix)
+    :param sensor_obj_list: (list) the object being tracked (in the sensor) 
+    with the properties: s_vector (current state), H (the observation model),
+                         P (measurement noise covariance matrix)
+    :param association_indices: (list,list), indicies of object 
+                                association in the lists
     :return:
     """
-    column = association_indices[0]
-    row = association_indices[1]
+    row = association_indices[0]
+    column = association_indices[1]
     for idx in range(len(column)):
         # TODO: check with Andac if the idx are correct
-        sensor_obj = sensor_obj_list[column[idx]]
-        fusion_obj = fusion_obj_list[row[idx]]
+        sensor_obj = sensor_obj_list[row[idx]]
+        fusion_obj = fusion_obj_list[column[idx]]
 
         # remove the rows and columns with nans
         s_vector_s = np.copy(sensor_obj.s_vector)
