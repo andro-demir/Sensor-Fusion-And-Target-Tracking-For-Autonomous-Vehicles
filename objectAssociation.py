@@ -60,20 +60,35 @@ def matchObjs(mahalanobisMatrix, clutter_threshold):
     '''
     rowInd, colInd = linear_sum_assignment(mahalanobisMatrix)
     matched_tuples = list(zip(rowInd, colInd))
+    print("Matched tuples (rowInd: Meas at t+1, colInd: State Est at t)")
+    print(rowInd)
+    print(colInd)
+    
     # get the rows and columns where mahalanobis distance is greater than 
     # clutter threshold
-    fp_rowInd, fp_colInd = np.where(mahalanobisMatrix >= clutter_threshold)
-    fp_tuples = list(zip(fp_rowInd, fp_colInd))
-    # remove the clutter detections from the matches
-    cleaned_matches = list(set(matched_tuples)-set(fp_tuples))
-    # return the row index and column index of true positive 
-    # object associations as numpy arrays.
-    cleaned_matches = np.array(cleaned_matches, dtype=np.dtype('int,int'))
-    rowInd, colInd = cleaned_matches['f0'], cleaned_matches['f1']
-    return rowInd, colInd
+    cluttered_matches = [] # list of false positive matches as tuples
+    cleaned_matches = [] # list of true postive matches as tuples
+    for (x,y) in list(zip(rowInd, colInd)):
+        if mahalanobisMatrix[x,y] >= clutter_threshold:
+            cluttered_matches.append((x,y))
+        else:
+            cleaned_matches.append((x,y))
 
-def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd,
-                               last, D):
+    print("False positive / Clutter tuples (rowInd: Meas at t+1, "
+                                            "colInd: State Est at t):")
+    print(cluttered_matches)
+    print("Cleaned matches (rowInd: Meas at t+1, colInd: State Est at t)")
+    print(cleaned_matches)
+    num_true_postive = len(cleaned_matches)
+
+    rowInd = [i[0] for i in cleaned_matches]
+    colInd = [i[1] for i in cleaned_matches]
+    print("Number of cluttered sensor readings:", len(cluttered_matches))
+    return rowInd, colInd, cluttered_matches, num_true_postive
+
+
+def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd, 
+                               cluttered_matches, last, D):
     '''
     :param fusionList (list): objects in the global list. 
     :param sensorObjList (List): objects in the radar / vision sensor 
@@ -86,15 +101,20 @@ def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd,
     :return fusionList (list): updated global list of obstacles
     '''
     # new initialization function
+    cluttered_sensors = [i[0] for i in cluttered_matches]
+    new_object_idx = list(set(range(len(sensorObjList))) - set(rowInd) - set(cluttered_sensors))
+    print("New sensor object indices: (Meas at t+1)")
+    print(new_object_idx)
     notAssignedSensor_objects = ObjectListCls(sensorObjList.timeStamp, 
                                               sensorObjList.sensor_specs)
     notAssignedSensor_objects.extend([i for idx, i in enumerate(sensorObjList) if
-                                      idx not in rowInd])
+                                      idx in new_object_idx])
     fusionList.extend(initialize_fusion_objects(notAssignedSensor_objects))
-
     # drop the obj from the fusion list
-    fusionList = drop_objects(fusionList, last_seen=last, distance_to_ego=D)
+    fusionList = drop_objects(fusionList, cluttered_matches, 
+                              last_seen=last, distance_to_ego=D)
     return fusionList
+    
 
 
 

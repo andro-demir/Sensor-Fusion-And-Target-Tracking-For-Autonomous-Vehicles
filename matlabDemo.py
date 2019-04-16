@@ -45,16 +45,19 @@ def main(time, Measurements, States, last_update_times):
                                    last_update_time=last_update_times[idx]))
 
     mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
-    rowInd, colInd = assc.matchObjs(mahalanobisMatrix, args.clutter_threshold)
+    rowInd, colInd, cluttered_matches, num_true_positive = assc.matchObjs(
+                                                            mahalanobisMatrix, 
+                                                       args.clutter_threshold)
     kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
-
     # Probability of existence of obstacles is updated:
     fusionList = assc.updateExistenceProbability(fusionList,
                                                  sensorObjList,
-                                                 rowInd, colInd, 
+                                                 rowInd, colInd,
+                                                 cluttered_matches, 
                                                  args.last_seen,
                                                  args.distance_to_ego)
     N_obstacles = len(fusionList)
+    print("Number of tracked actors:", N_obstacles)
     stateEstimates = np.zeros((4, N_obstacles))  # (pos_x, vel_x, pos_y, vel_y)
     last_update_times = np.zeros((1, N_obstacles))
     for i in range(N_obstacles):
@@ -67,21 +70,20 @@ def main(time, Measurements, States, last_update_times):
     print(50 * "**")
     print("Time: %f" % time)
     print("Measurements:\n", Measurements)
-    print("Mahalanobis Matrix", mahalanobisMatrix)
     print("State Estimates:\n", stateEstimates)
     print("Last Update Times:\n", last_update_times)
-    return [stateEstimates, last_update_times]
+    return [stateEstimates, last_update_times, num_true_positive]
 
 def parse_args():
     parser = argparse.ArgumentParser(description='CSL-EATRON KF TRACKER.', 
                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)    
-    parser.add_argument('--clutter_threshold', type=float, default=1.5, 
+    parser.add_argument('--clutter_threshold', type=float, default=0.6, 
                         help='if mahalanobis distance > clutter thresholod,'
                              'assign as false positive')
-    parser.add_argument('--last_seen', type=float, default=0.4, 
+    parser.add_argument('--last_seen', type=float, default=1.0, 
                         help='if the tracked object has not been seen longer'
                              'than last_seen, delete it from the fusion list')
-    parser.add_argument('--distance_to_ego', type=float, default=80, 
+    parser.add_argument('--distance_to_ego', type=float, default=100, 
                         help='distance to ego (L1 norm of the tracked objects'
                              'state vector)')
     args = parser.parse_args()

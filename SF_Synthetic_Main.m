@@ -250,9 +250,10 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             % convert numpy array to matlab arrays
             stateEstimates = double(pythonOutput{1}); 
             lastUpdateTimes = double(pythonOutput{2});
+            num_true_positive = int64(pythonOutput{3});
             
-            N_obstacles = size(stateEstimates,2);            
-            Performance.Actors.PYTracks = [Performance.Actors.PYTracks; N_obstacles];
+            %N_obstacles = size(stateEstimates,2);            
+            Performance.Actors.PYTracks = [Performance.Actors.PYTracks; num_true_positive];
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks
