@@ -45,8 +45,9 @@ def main(time, Measurements, States, last_update_times):
                                    last_update_time=last_update_times[idx]))
 
     mahalanobisMatrix = assc.getMahalanobisMatrix(fusionList, sensorObjList)
-    rowInd, colInd, cluttered_matches, num_true_positive = assc.matchObjs(
-                                                            mahalanobisMatrix, 
+    rowInd, colInd, cluttered_matches, cleaned_matches, \
+                                    num_true_positive = assc.matchObjs(
+                                                         mahalanobisMatrix, 
                                                        args.clutter_threshold)
     kf_measurement_update(fusionList, sensorObjList, (rowInd, colInd))
     # Probability of existence of obstacles is updated:
@@ -72,18 +73,21 @@ def main(time, Measurements, States, last_update_times):
     print("Measurements:\n", Measurements)
     print("State Estimates:\n", stateEstimates)
     print("Last Update Times:\n", last_update_times)
-    return [stateEstimates, last_update_times, num_true_positive]
+    
+    trackedStates = [x[1] for x in cleaned_matches]
+    return [stateEstimates, last_update_times, trackedStates, 
+            num_true_positive]
 
 def parse_args():
     parser = argparse.ArgumentParser(description='CSL-EATRON KF TRACKER.', 
                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)    
-    parser.add_argument('--clutter_threshold', type=float, default=0.6, 
+    parser.add_argument('--clutter_threshold', type=float, default=0.5, 
                         help='if mahalanobis distance > clutter thresholod,'
                              'assign as false positive')
-    parser.add_argument('--last_seen', type=float, default=2.0, 
+    parser.add_argument('--last_seen', type=float, default=0.6, 
                         help='if the tracked object has not been seen longer'
                              'than last_seen, delete it from the fusion list')
-    parser.add_argument('--distance_to_ego', type=float, default=200, 
+    parser.add_argument('--distance_to_ego', type=float, default=400, 
                         help='distance to ego (L1 norm of the tracked objects'
                              'state vector)')
     args = parser.parse_args()

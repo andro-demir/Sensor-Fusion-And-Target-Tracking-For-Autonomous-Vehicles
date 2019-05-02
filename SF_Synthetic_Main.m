@@ -114,7 +114,8 @@ ActorRadius = norm([Car1.Length,Car1.Width]);
 % Car2 = vehicle(scenario, 'ClassID', 1);
 % WPs{3} = circshift(WPs{3},-50);
 % path(Car2, WPs{3}, EgoSpeed -5);
-
+% 
+% ActorRadius = norm([Car1.Length,Car1.Width]);
 %---------------------------------------------------------------------------------------------
 
 %% Create a Tracker
@@ -160,9 +161,14 @@ Performance.GhostActors.PY = [];
 
 stateEstimates = [];
 lastUpdateTimes = [];
+allTimeStateEstimates = {}; % cell to store state estimates at teach time idx for visualizing the tracks and plotting the metrics.
+allTimeTrackedActors = {}; % cell to store the actor index at the state estimate array for each time step
+% cell to store ground truth information of Cars at each time idx for visualizing the tracks and plotting the metrics.
+allTimeCar1 = {}; 
+allTimeCar2 = {}; 
+allTimeCar3 = {}; 
+allTimeCar4 = {}; 
 while advance(scenario) %&& ishghandle(BEP.Parent)   
-    timeStep = 0; % for python interoperability
-    currentStep = currentStep + 1;
     % Get the scenario time
     time = scenario.SimulationTime;
     
@@ -226,7 +232,8 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         % Flag-case scenario for running the Python code
         % (for tracker data association and tracker kalman update)
         % Note: In Eatron's code: Measurements = [x vx y vy]'
-        if runPythonCode==true     
+        if runPythonCode==true   
+            currentStep = currentStep + 1;
             my_objectClasses = py.importlib.import_module('objectClasses');
             py.importlib.reload(my_objectClasses);
             
@@ -242,18 +249,31 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             my_pydemo = py.importlib.import_module('matlabDemo');
             py.importlib.reload(my_pydemo);
             
-            % pythonOutput = [stateEstimates, lastUpdateTimes]
             pythonOutput = py.matlabDemo.main(time, py.numpy.array(Measurements), ...
                                               py.numpy.array(stateEstimates), ...
                                               py.numpy.array(lastUpdateTimes));
             
-            % convert numpy array to matlab arrays
+            % convert numpy arrays and python lists to matlab arrays
+            % add 1 to indices of the pyhton to match with the indices of matlab
             stateEstimates = double(pythonOutput{1}); 
             lastUpdateTimes = double(pythonOutput{2});
-            num_true_positive = int64(pythonOutput{3});
-            
-            %N_obstacles = size(stateEstimates,2);            
+            trackedActorIdx = cellfun(@double, cell(pythonOutput{3})) + 1;
+            num_true_positive = int64(pythonOutput{4});
+            allTimeStateEstimates{currentStep} = stateEstimates;
+            allTimeTrackedActors{currentStep} = trackedActorIdx;
+            allTimeCar1{currentStep} = Car1.Position;
+            allTimeCar2{currentStep} = Car2.Position;
+            allTimeCar3{currentStep} = Car3.Position;
+            allTimeCar4{currentStep} = Car4.Position;
             Performance.Actors.PYTracks = [Performance.Actors.PYTracks; num_true_positive];
+            disp("Car1's position (x,y,z):");
+            disp(Car1.Position);
+            disp("Car2's position (x,y,z):");
+            disp(Car2.Position);
+            disp("Car3's position (x,y,z):");
+            disp(Car3.Position);
+            disp("Car4's position (x,y,z):");
+            disp(Car4.Position);
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks
@@ -287,7 +307,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         Performance.Actors.Ground = [Performance.Actors.Ground;  EAPerformanceIndices.NoOfActorsInScene];
         Performance.Actors.EATracks = [Performance.Actors.EATracks; EAPerformanceIndices.NoOfTracksInScene];
         Performance.Actors.MATracks = [Performance.Actors.MATracks; MAPerformanceIndices.NoOfTracksInScene];
-        
+                      
         % Performance metric 2) Mean distance of Actors in the scene wrt the
         % associated tracks using PerRadius
         Performance.MeanDistance.EA = [Performance.MeanDistance.EA; EAPerformanceIndices.MeanDistance];
@@ -299,9 +319,11 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
         Performance.GhostActors.EA = [Performance.GhostActors.EA; EAPerformanceIndices.GhostActors];
         Performance.GhostActors.MA = [Performance.GhostActors.MA; MAPerformanceIndices.GhostActors];
     end
-
 end
-
+%% Visualization of the track-lines
+if runPythonCode==true
+    visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
+end    
 %% Performance Plot
 figure;
     plot(Performance.Actors.PYTracks,'g')

@@ -79,12 +79,13 @@ def matchObjs(mahalanobisMatrix, clutter_threshold):
     print(cluttered_matches)
     print("Cleaned matches (rowInd: Meas at t+1, colInd: State Est at t)")
     print(cleaned_matches)
-    num_true_postive = len(cleaned_matches)
+    num_true_positive = len(cleaned_matches)
 
     rowInd = [i[0] for i in cleaned_matches]
     colInd = [i[1] for i in cleaned_matches]
     print("Number of cluttered sensor readings:", len(cluttered_matches))
-    return rowInd, colInd, cluttered_matches, num_true_postive
+    return rowInd, colInd, cluttered_matches, cleaned_matches, \
+           num_true_positive
 
 
 def updateExistenceProbability(fusionList, sensorObjList, rowInd, colInd, 
