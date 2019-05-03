@@ -1,5 +1,6 @@
 function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
-                         allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4)
+                         allTimeCar1, allTimeCar2, ...
+                         allTimeCar3, allTimeCar4, allTimeEgo)
 % This function visualizes the tracks of all the actors in the ground truth
 % and state estimations for comparison.
 
@@ -9,9 +10,11 @@ function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
     % number of state estimates (total time steps) in allTimeStateEstimates:
     num_steps = numel(allTimeStateEstimates);
     for i = 2:num_steps
-        estX = allTimeStateEstimates{i-1}(1,allTimeTrackedActors{i});
-        estY = allTimeStateEstimates{i-1}(3,allTimeTrackedActors{i});
-        
+        egoX = allTimeEgo{i}(1);
+        egoY = allTimeEgo{i}(2);
+        estX = allTimeStateEstimates{i-1}(1,allTimeTrackedActors{i}) + egoX;
+        estY = allTimeStateEstimates{i-1}(3,allTimeTrackedActors{i}) + egoY;
+               
         c1X = allTimeCar1{i}(1);
         c1Y = allTimeCar1{i}(2);
         c2X = allTimeCar2{i}(1);
@@ -23,6 +26,7 @@ function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
         
         scatter(estX,estY,'k','+')
         hold on
+        
         scatter(c1X,c1Y,'r','o')
         hold on
         scatter(c2X,c2Y,'g','o')
