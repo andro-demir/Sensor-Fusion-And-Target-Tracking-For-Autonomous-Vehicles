@@ -1,5 +1,6 @@
 function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
-                         allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4)
+                         allTimeEgo, allTimeCar1, allTimeCar2, ...
+                         allTimeCar3, allTimeCar4)
 % This function visualizes the tracks of all the actors in the ground truth
 % and state estimations for comparison.
 
@@ -12,6 +13,9 @@ function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
         estX = allTimeStateEstimates{i-1}(1,allTimeTrackedActors{i});
         estY = allTimeStateEstimates{i-1}(3,allTimeTrackedActors{i});
         
+        egoX = allTimeEgo{i}(1);
+        egoY = allTimeEgo{i}(2);
+
         c1X = allTimeCar1{i}(1);
         c1Y = allTimeCar1{i}(2);
         c2X = allTimeCar2{i}(1);
@@ -22,6 +26,8 @@ function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
         c4Y = allTimeCar4{i}(2);
         
         scatter(estX,estY,'k','+')
+        hold on
+        scatter(egoX,egoY,'y','o')
         hold on
         scatter(c1X,c1Y,'r','o')
         hold on
@@ -59,7 +65,7 @@ function visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
             hold on
         end
     end
-    legend('CSL-Tracker', 'Car1 True-Track', 'Car2 True-Track', ...
+    legend('CSL-Tracker', 'Ego Car', 'Car1 True-Track', 'Car2 True-Track', ...
            'Car3 True-Track', 'Car4 True-Track', 'Location','SouthWest')
     hold off
 end

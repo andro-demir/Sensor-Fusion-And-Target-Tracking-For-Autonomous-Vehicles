@@ -164,6 +164,7 @@ lastUpdateTimes = [];
 allTimeStateEstimates = {}; % cell to store state estimates at teach time idx for visualizing the tracks and plotting the metrics.
 allTimeTrackedActors = {}; % cell to store the actor index at the state estimate array for each time step
 % cell to store ground truth information of Cars at each time idx for visualizing the tracks and plotting the metrics.
+allTimeEgo = {};
 allTimeCar1 = {}; 
 allTimeCar2 = {}; 
 allTimeCar3 = {}; 
@@ -254,13 +255,14 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
                                               py.numpy.array(lastUpdateTimes));
             
             % convert numpy arrays and python lists to matlab arrays
-            % add 1 to indices of the pyhton to match with the indices of matlab
+            % add 1 to indices of the python to match with the indices of matlab
             stateEstimates = double(pythonOutput{1}); 
             lastUpdateTimes = double(pythonOutput{2});
             trackedActorIdx = cellfun(@double, cell(pythonOutput{3})) + 1;
             num_true_positive = int64(pythonOutput{4});
             allTimeStateEstimates{currentStep} = stateEstimates;
             allTimeTrackedActors{currentStep} = trackedActorIdx;
+            allTimeEgo{currentStep} = egoCar.Position;
             allTimeCar1{currentStep} = Car1.Position;
             allTimeCar2{currentStep} = Car2.Position;
             allTimeCar3{currentStep} = Car3.Position;
@@ -275,7 +277,7 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             disp("Car4's position (x,y,z):");
             disp(Car4.Position);
             %visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
-            %                allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
+            %                allTimeEgo, allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks
@@ -324,7 +326,8 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
 end
 %% Visualization of the track-lines
 if runPythonCode==true
-    visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
+    visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, allTimeEgo, ...
+                    allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
 end    
 %% Performance Plot
 figure;
