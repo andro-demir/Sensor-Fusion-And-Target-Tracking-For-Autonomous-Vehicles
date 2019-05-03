@@ -81,10 +81,10 @@ def main(time, Measurements, States, last_update_times):
 def parse_args():
     parser = argparse.ArgumentParser(description='CSL-EATRON KF TRACKER.', 
                     formatter_class=argparse.ArgumentDefaultsHelpFormatter)    
-    parser.add_argument('--clutter_threshold', type=float, default=0.9, 
+    parser.add_argument('--clutter_threshold', type=float, default=0.6, 
                         help='if mahalanobis distance > clutter thresholod,'
                              'assign as false positive')
-    parser.add_argument('--last_seen', type=float, default=2, 
+    parser.add_argument('--last_seen', type=float, default=0.4, 
                         help='if the tracked object has not been seen longer'
                              'than last_seen, delete it from the fusion list')
     parser.add_argument('--distance_to_ego', type=float, default=100, 
