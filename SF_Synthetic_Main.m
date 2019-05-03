@@ -274,6 +274,8 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             disp(Car3.Position);
             disp("Car4's position (x,y,z):");
             disp(Car4.Position);
+            %visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
+            %                allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks
