@@ -164,11 +164,11 @@ lastUpdateTimes = [];
 allTimeStateEstimates = {}; % cell to store state estimates at teach time idx for visualizing the tracks and plotting the metrics.
 allTimeTrackedActors = {}; % cell to store the actor index at the state estimate array for each time step
 % cell to store ground truth information of Cars at each time idx for visualizing the tracks and plotting the metrics.
-allTimeEgo = {};
 allTimeCar1 = {}; 
 allTimeCar2 = {}; 
 allTimeCar3 = {}; 
 allTimeCar4 = {}; 
+allTimeEgo = {};
 while advance(scenario) %&& ishghandle(BEP.Parent)   
     % Get the scenario time
     time = scenario.SimulationTime;
@@ -250,6 +250,37 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             my_pydemo = py.importlib.import_module('matlabDemo');
             py.importlib.reload(my_pydemo);
             
+            % Sensor measurements are different than Cars' positions and
+            % velocity in the scenario (ground truth state vectors)
+            % and velocity in the scenario.
+            % Add white noise to the state vectors of Cars
+            % and include them in the Measurements array 
+            % (using the relative positions and velocities w.r.t. egoCar)
+            car1Meas = zeros(4,1);
+            car1Meas(1) = Car1.Position(1)+2*rand - egoCar.Position(1);
+            car1Meas(2) = Car1.Velocity(1)+2*rand - egoCar.Velocity(1);
+            car1Meas(3) = Car1.Position(2)+2*rand - egoCar.Position(2);
+            car1Meas(4) = Car1.Velocity(2)+2*rand - egoCar.Position(2);
+            
+            car2Meas = zeros(4,1);
+            car2Meas(1) = Car2.Position(1)+2*rand - egoCar.Position(1);
+            car2Meas(2) = Car2.Velocity(1)+2*rand - egoCar.Velocity(1);
+            car2Meas(3) = Car2.Position(2)+2*rand - egoCar.Position(2);
+            car2Meas(4) = Car2.Velocity(2)+2*rand - egoCar.Velocity(2);
+            
+            car3Meas = zeros(4,1);
+            car3Meas(1) = Car3.Position(1)+2*rand - egoCar.Position(1);
+            car3Meas(2) = Car3.Velocity(1)+2*rand - egoCar.Velocity(1);
+            car3Meas(3) = Car3.Position(2)+2*rand - egoCar.Position(2);
+            car3Meas(4) = Car3.Velocity(2)+2*rand - egoCar.Velocity(2);
+            
+            car4Meas = zeros(4,1);
+            car4Meas(1) = Car4.Position(1)+2*rand - egoCar.Position(1);
+            car4Meas(2) = Car4.Velocity(1)+2*rand - egoCar.Velocity(1);
+            car4Meas(3) = Car4.Position(2)+2*rand - egoCar.Position(2);
+            car4Meas(4) = Car4.Velocity(2)+2*rand - egoCar.Velocity(2);
+            
+            Measurements = [Measurements(:,5:end), car1Meas, car2Meas, car3Meas, car4Meas];
             pythonOutput = py.matlabDemo.main(time, py.numpy.array(Measurements), ...
                                               py.numpy.array(stateEstimates), ...
                                               py.numpy.array(lastUpdateTimes));
@@ -260,24 +291,27 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
             lastUpdateTimes = double(pythonOutput{2});
             trackedActorIdx = cellfun(@double, cell(pythonOutput{3})) + 1;
             num_true_positive = int64(pythonOutput{4});
+            
             allTimeStateEstimates{currentStep} = stateEstimates;
             allTimeTrackedActors{currentStep} = trackedActorIdx;
-            allTimeEgo{currentStep} = egoCar.Position;
-            allTimeCar1{currentStep} = Car1.Position;
-            allTimeCar2{currentStep} = Car2.Position;
-            allTimeCar3{currentStep} = Car3.Position;
-            allTimeCar4{currentStep} = Car4.Position;
+            allTimeCar1{currentStep} = Car1.Position(1:2);
+            allTimeCar2{currentStep} = Car2.Position(1:2);
+            allTimeCar3{currentStep} = Car3.Position(1:2);
+            allTimeCar4{currentStep} = Car4.Position(1:2);
+            allTimeEgo{currentStep} = egoCar.Position(1:2);
+            
+            disp("Car1's relative position (x,y,z):");
+            disp(car1Meas(1:2:end,:));
+            disp("Car2's relative position (x,y,z):");
+            disp(car2Meas(1:2:end,:));
+            disp("Car3's relative position (x,y,z):");
+            disp(car3Meas(1:2:end,:));
+            disp("Car4's relative position (x,y,z):");
+            disp(car4Meas(1:2:end,:));            
+            
             Performance.Actors.PYTracks = [Performance.Actors.PYTracks; num_true_positive];
-            disp("Car1's position (x,y,z):");
-            disp(Car1.Position);
-            disp("Car2's position (x,y,z):");
-            disp(Car2.Position);
-            disp("Car3's position (x,y,z):");
-            disp(Car3.Position);
-            disp("Car4's position (x,y,z):");
-            disp(Car4.Position);
-            %visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
-            %                allTimeEgo, allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
+            visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
+                            allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4, allTimeEgo);
         end
         %% Tracker Data Association
         % Calculate the distance btw measured objects (detections) and tracks
@@ -326,8 +360,8 @@ while advance(scenario) %&& ishghandle(BEP.Parent)
 end
 %% Visualization of the track-lines
 if runPythonCode==true
-    visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, allTimeEgo, ...
-                    allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4);
+    visualizeTracks(allTimeStateEstimates, allTimeTrackedActors, ...
+                    allTimeCar1, allTimeCar2, allTimeCar3, allTimeCar4, allTimeEgo);
 end    
 %% Performance Plot
 figure;
