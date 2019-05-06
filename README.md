@@ -25,7 +25,7 @@ To run the demo:
 Run SF_Synthetic_Main.m
 ```
 ![image](https://user-images.githubusercontent.com/43050657/57249662-88018000-7013-11e9-9cec-35bf6d646bab.png)
-Arrows represent the velocity vectors of the other actors in the scene.
+Arrows represent the velocity vectors of other actors in the scene.
 
 ### Hyperparameter Tuning
 On matlabDemo.py, you can tune the hyperparameters:
