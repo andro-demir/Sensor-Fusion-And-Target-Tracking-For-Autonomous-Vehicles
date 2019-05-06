@@ -14,5 +14,13 @@ Instructions to enable Python - Matlab Interoperability
 4. Start Matlab and setup the Python interpreter for Matlab with: pyversion(path_to_python.exe_in_your_virtual_env)
 ```
 
+## Demo
+After successfully completing basic installation, you'll be ready to run the demo.
+
+To run the demo:
+```
+Run SF_Synthetic_Main.m
+```
+
 ## Contact
 ademir@ece.neu.edu
