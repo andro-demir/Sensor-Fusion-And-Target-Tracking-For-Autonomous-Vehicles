@@ -25,8 +25,8 @@ To run the demo:
 Run SF_Synthetic_Main.m
 ```
 
-### Parameter Tuning
-On matlabDemo.py, you can tune the parameters:
+### Hyperparameter Tuning
+On matlabDemo.py, you can tune the hyperparameters:
 ```
 --clutter_threshold: type=float, default=0.75, help='if mahalanobis distance > clutter thresholod, assign the object as false positive'
 --last_seen: type=float, default=1.0, help='if the tracked object has not been seen longer than last_seen, delete it from the fusion list'
