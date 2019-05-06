@@ -1,6 +1,6 @@
 # Advanced Driver-Assistance Systems (ADAS)
 
-## Softare Requirements
+## Software Requirements
 
 Instructions to enable Python - Matlab Interoperability
 ```
