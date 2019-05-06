@@ -1,9 +1,9 @@
 # Advanced Driver-Assistance Systems (ADAS)
 
-## Disclaimer
+### Disclaimer
 This program is not free software; you cannot redistribute it and/or modify it.
 
-## Software Requirements
+### Software Requirements
 
 Instructions to enable Python - Matlab Interoperability
 ```
@@ -17,7 +17,7 @@ Instructions to enable Python - Matlab Interoperability
 4. Start Matlab and setup the Python interpreter for Matlab with: pyversion(path_to_python.exe_in_your_virtual_env)
 ```
 
-## Demo
+### Demo
 After successfully completing basic installation, you'll be ready to run the demo.
 
 To run the demo:
@@ -25,5 +25,13 @@ To run the demo:
 Run SF_Synthetic_Main.m
 ```
 
-## Contact
+### Parameter Tuning
+On matlabDemo.py, you can tune the parameters:
+```
+--clutter_threshold: type=float, default=0.75, help='if mahalanobis distance > clutter thresholod, assign the object as false positive'
+--last_seen: type=float, default=1.0, help='if the tracked object has not been seen longer than last_seen, delete it from the fusion list'
+--distance_to_ego: type=float, default=200, help='distance to ego (L1 norm of the tracked objects' state vector)'
+```
+
+### Contact
 ademir@ece.neu.edu
