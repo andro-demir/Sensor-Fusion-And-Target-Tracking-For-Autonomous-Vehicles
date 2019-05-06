@@ -1,8 +1,5 @@
 # Advanced Driver-Assistance Systems (ADAS)
 
-### Disclaimer
-This program is not free software; you cannot redistribute it and/or modify it.
-
 ### Software Requirements
 
 Instructions to enable Python - Matlab Interoperability
