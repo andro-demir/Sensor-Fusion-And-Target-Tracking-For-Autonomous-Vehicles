@@ -2,10 +2,10 @@
 
 # Table of contents
 1. [Introduction](#introduction)
-2. [Software Requirements](#softwarerequirements)
-3. [Data and Experiments](#paragraph2)
-    1. [Demo](#Demo)
-    1. [Hyper-parameter Tuning](#Hyperparameter Tuning)
+2. [Software Requirements](#software)
+3. [Data and Experiments](#data)
+    1. [Demo](#demo)
+    2. [Hyper-parameter Tuning](#hyperparameter)
     
 ### Introduction
 This software package implements a low-level sensor data fusion algorithm, in which the data extracted from highly synchronized sensors is combined associating the radar and vision measurements and then feeding the fused measurements to a central tracking algorithm, based on Kalman filter updates. 
@@ -26,7 +26,9 @@ Instructions to enable Python - Matlab Interoperability
 4. Start Matlab and setup the Python interpreter for Matlab with: pyversion(path_to_python.exe_in_your_virtual_env)
 ```
 
-### Demo
+### Data and Experiments
+
+#### Demo
 After successfully completing basic installation, you'll be ready to run the demo.
 
 To run the demo:
@@ -36,7 +38,7 @@ Run SF_Synthetic_Main.m
 ![image](https://user-images.githubusercontent.com/43050657/57249662-88018000-7013-11e9-9cec-35bf6d646bab.png)
 Arrows represent the velocity vectors of other actors in the scene.
 
-### Hyperparameter Tuning
+#### Hyperparameter Tuning
 On matlabDemo.py, you can tune the hyperparameters:
 ```
 --clutter_threshold: type=float, default=0.75, help='if mahalanobis distance > clutter thresholod, assign the object as false positive'
@@ -44,5 +46,5 @@ On matlabDemo.py, you can tune the hyperparameters:
 --distance_to_ego: type=float, default=200, help='distance to ego (L1 norm of the tracked objects' state vector)'
 ```
 
-### Contact
+#### Contact
 ademir@ece.neu.edu
