@@ -3,7 +3,7 @@
 ### Introduction
 This software package implements a low-level sensor data fusion algorithm, in which the data extracted from highly synchronized sensors is combined associating the radar and vision measurements and then feeding the fused measurements to a central tracking algorithm, based on Kalman filter updates. 
 
-The first step is to temporally and spatially align the sensor-level object lists from all the sensors to a common reference frame. This puts all of the object list into a global coordinate system. Once this is accomplished, the object lists from all of the sensors are associated with one another in order to determine which object from different sensors correspond to the same object in reality. This provides any driver assistance application, combined with other perception modules such as lane detection, digital maps, host vehicle localization, specific situation assessment algorithms. Some examples are controlling an actuator, triggering a warning and changing a state.
+The first step is to temporally and spatially align the sensor-level object lists from all the sensors to a common reference frame. This puts all of the object list into a global coordinate system. Once this is accomplished, the object lists from all of the sensors are associated with one another in order to determine which object from different sensors correspond to the same object in reality. Combined with other perception modules such as lane detection, digital maps, host vehicle localization, this provides any driver assistance application specific situation assessment algorithms. Some examples of those are controlling an actuator, triggering a warning and changing a state.
 
 ### Software Requirements
 
