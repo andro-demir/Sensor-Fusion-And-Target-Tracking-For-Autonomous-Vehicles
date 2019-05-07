@@ -3,6 +3,8 @@
 ### Introduction
 This software package implements a low-level sensor data fusion algorithm, in which the data extracted from highly synchronized sensors is combined associating the radar and vision measurements and then feeding the fused measurements to a central tracking algorithm, based on Kalman filter updates. 
 
+The first step is temporally and saptially align the sensor-level object lists from all the sensors. This puts all of the object list into a global coordinate system. Once this is accomplished, the object lists from all of the sensors are associated with one another in order to determine which object from different sensors correspond to the same object in reality.
+
 ### Software Requirements
 
 Instructions to enable Python - Matlab Interoperability
