@@ -1,4 +1,4 @@
-# Advanced Driver-Assistance Systems (ADAS)
+# Advanced Driver Assistance Systems (ADAS)
 
 ### Software Requirements
 
