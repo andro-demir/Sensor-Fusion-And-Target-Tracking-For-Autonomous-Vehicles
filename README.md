@@ -1,5 +1,12 @@
 # Advanced Driver Assistance Systems (ADAS)
 
+# Table of contents
+1. [Introduction](#introduction)
+2. [Software Requirements](#paragraph1)
+3. [Data and Experiments](#paragraph2)
+    1. [Demo](#subparagraph2)
+    1. [Hyper-parameter Tuning](#subparagraph2)
+    
 ### Introduction
 This software package implements a low-level sensor data fusion algorithm, in which the data extracted from highly synchronized sensors is combined associating the radar and vision measurements and then feeding the fused measurements to a central tracking algorithm, based on Kalman filter updates. 
 
