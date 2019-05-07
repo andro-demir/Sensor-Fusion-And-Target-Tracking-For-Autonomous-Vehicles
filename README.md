@@ -2,7 +2,7 @@
 
 # Table of contents
 1. [Introduction](#introduction)
-2. [Software Requirements](#software requirements)
+2. [Software Requirements](#softwarerequirements)
 3. [Data and Experiments](#paragraph2)
     1. [Demo](#Demo)
     1. [Hyper-parameter Tuning](#Hyperparameter Tuning)
