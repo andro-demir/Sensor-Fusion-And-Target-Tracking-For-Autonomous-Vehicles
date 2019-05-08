@@ -1,6 +1,7 @@
 import numpy as np
 from objectClasses import Obstacle
 
+
 def spatial_alignment(obj_list, H_sensor_veh):
     """
     Transform the state vector of the object from sensor coordinate frame
@@ -16,6 +17,17 @@ def spatial_alignment(obj_list, H_sensor_veh):
                        H_sensor_veh[:-1, :-1].T)
     pass
 
+
+Q_11 = np.zeros((11, 11))
+Q_11[6:9, 6:9] = np.multiply(np.random.random(size=(3, 3)), np.eye(
+    3))  # noise added only at the last derivatives:
+Q_11[-1, -1] = np.random.random()
+
+Q_8 = np.zeros((8, 8))
+Q_8[4:6, 4:6] = np.multiply(np.random.random(size=(2, 2)),
+                            np.eye(2))
+# noise added only at the last derivatives:
+Q_8[-1, -1] = np.random.random()
 
 def temporal_alignment(obj_list, current_time, method='SingleStep'):
     """
@@ -42,14 +54,9 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
                           [0, 0, 0, 0, 0, 0, 1, delta],
                           [0, 0, 0, 0, 0, 0, 0, 0]])
 
-            w = np.zeros((8,))
-            w[4:6] = np.random.normal(size=(2,)) # noise added to accelerations
-            accs = range(4, 6)
-            Q = np.zeros((8, 8))
-            Q[accs, accs] = np.multiply(np.random.normal(size=(2, 2)), 
-                                        np.eye(2))  
-            # noise added only at the last derivatives:
-            Q[-1, -1] = np.random.normal()
+            Q = Q_8
+            w = np.random.normal(scale=Q)  # noise added to accelerations
+
         else:  # z axis is included
             F = np.array([[1, 0, 0, delta, 0, 0, 0.5 * delta ** 2, 0, 0, 0, 0],
                           [0, 1, 0, 0, delta, 0, 0, 0.5 * delta ** 2, 0, 0, 0],
@@ -62,16 +69,9 @@ def temporal_alignment(obj_list, current_time, method='SingleStep'):
                           [0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0],
                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, delta],
                           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+            Q = Q_11
+            w = np.random.normal(scale=Q)
 
-            w = np.zeros((11,))
-            accs = range(6, 9)
-            # noise added to accelerations
-            w[accs] = np.random.normal(size=(3,))  
-
-            Q = np.zeros((11, 11))
-            Q[6:9, 6:9] = np.multiply(np.random.normal(size=(3, 3)), np.eye(
-                3))  # noise added only at the last derivatives:
-            Q[-1, -1] = np.random.normal()
 
         not_nan_idx = np.where(np.invert(np.isnan(obj.s_vector)))[0]
 
